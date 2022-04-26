@@ -1,7 +1,7 @@
 
 
 Name:    uxplay
-Version: 1.50
+Version: 1.51a
 Release: 1%{?dist}
 Summary: UxPlay is an AirPlay server for Linux
 
@@ -45,6 +45,9 @@ UxPlay is an AirPlay server for Linux. It lets you stream the display content of
 %{_mandir}/man1/uxplay.1.gz
 
 %changelog
+* Tue Apr 26 2022 laolux <25555671+laolux@users.noreply.github.com> 1.51a-1
+- Automatic commit of package [uxplay] release [1.50-1].
+  (25555671+laolux@users.noreply.github.com)
 * Mon Apr 25 2022 laolux <25555671+laolux@users.noreply.github.com> 1.50-1
 - Automatic commit of package [uxplay] release [1.49-1].
   (25555671+laolux@users.noreply.github.com)
