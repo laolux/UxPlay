@@ -1,11 +1,11 @@
-.TH UXPLAY "1" "August 2022" "1.56" "User Commands"
+.TH UXPLAY "1" "December 2022" "1.60" "User Commands"
 .SH NAME
 uxplay \- start AirPlay server
 .SH SYNOPSIS
 .B uxplay
 [\fI\,-n name\/\fR] [\fI\,-s wxh\/\fR] [\fI\,-p \/\fR[\fI\,n\/\fR]] [more \fI OPTIONS \/\fR ...]
 .SH DESCRIPTION
-UxPlay 1.56: An open\-source AirPlay mirroring server based on RPiPlay
+UxPlay 1.60: An open\-source AirPlay mirroring (+ audio streaming) server.
 .SH OPTIONS
 .TP
 .B
@@ -18,7 +18,7 @@ UxPlay 1.56: An open\-source AirPlay mirroring server based on RPiPlay
 .TP
 \fB\-o\fR        Set display "overscanned" mode on (not usually needed)
 .TP
-\fB-fs\fR       Full-screen (only with Wayland and VAAPI plugins)
+\fB-fs\fR       Full-screen (only works with X11, Wayland and VAAPI)
 .TP
 \fB\-p\fR        Use legacy ports UDP 6000:6001:7011 TCP 7000:7001:7100
 .TP
@@ -47,7 +47,7 @@ UxPlay 1.56: An open\-source AirPlay mirroring server based on RPiPlay
 .IP
    choices: ximagesink,xvimagesink,vaapisink,glimagesink,
 .IP
-   gtksink,waylandsink,osximagesink,kmssink,fpsdisplaysink,...
+   gtksink,waylandsink,osximagesink,kmssink,d3d11videosink,...
 .PP
 .TP
 \fB\-vs\fR 0     Streamed audio only, with no video display window.
@@ -58,7 +58,7 @@ UxPlay 1.56: An open\-source AirPlay mirroring server based on RPiPlay
 .TP
 \fB\-rpi\fR      Same as "-v4l2" (for RPi=Rasberry Pi).
 .TP
-\fB\-rpigl\fR    Same as "-v4l2 -vs glimagesink" for RPi.
+\fB\-rpigl\fR    Same as "-rpi -vs glimagesink" for RPi.
 .TP
 \fB\-rpifb\fR    Same as "-rpi -vs kmssink" for RPi using framebuffer.
 .TP
@@ -66,7 +66,9 @@ UxPlay 1.56: An open\-source AirPlay mirroring server based on RPiPlay
 .TP
 \fB\-as\fI sink\fR  Choose the GStreamer audiosink; default "autoaudiosink"
 .IP
-   choices:pulsesink,alsasink,osssink,oss4sink,osxaudiosink,..
+   choices:pulsesink,alsasink,pipewiresink,osssink,oss4sink,
+.IP
+   jackaudiosink,osxaudiosink,wasapisink,directsoundsink,..
 .PP
 .TP
 \fB\-as\fR 0     (or \fB\-a\fR) Turn audio off, streamed video only.
@@ -76,6 +78,8 @@ UxPlay 1.56: An open\-source AirPlay mirroring server based on RPiPlay
 \fB\-reset\fR n  Reset after 3n seconds client silence (default 5, 0=never).
 .TP
 \fB\-nc\fR       Do not close video window when client stops mirroring
+.TP
+\fB\-nohold\fR   Drop current connection when new client connects.
 .TP
 \fB\-FPSdata\fR  Show video-streaming performance reports sent by client.
 .TP
@@ -91,20 +95,20 @@ UxPlay 1.56: An open\-source AirPlay mirroring server based on RPiPlay
 .TP
 \fB\-vdmp\fR [n] Dump h264 video output to "fn.h264"; fn="videodump", change
 .IP
-    with "-vdmp [n] filename". If [n] is given, file fn.x.h264
+   with "-vdmp [n] filename". If [n] is given, file fn.x.h264
 .IP
-    x=1,2,.. opens whenever a new SPS/PPS NAL arrives, and <=n
+   x=1,2,.. opens whenever a new SPS/PPS NAL arrives, and <=n
 .IP
-    NAL units are dumped.
+   NAL units are dumped.
 .PP
 .TP
 \fB\-admp\fR [n] Dump audio output to "fn.x.fmt", fmt ={aac, alac, aud}, x
 .IP
-    =1,2,..; fn="audiodump"; change with "-admp [n] filename".
+   =1,2,..; fn="audiodump"; change with "-admp [n] filename".
 .IP
-    x increases when audio format changes. If n is given, <= n
+   x increases when audio format changes. If n is given, <= n
 .IP
-    audio packets are dumped. "aud"= unknown format.
+   audio packets are dumped. "aud"= unknown format.
 .PP
 .TP
 \fB\-d\fR        Enable debug logging

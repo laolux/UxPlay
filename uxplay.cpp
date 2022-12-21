@@ -21,18 +21,26 @@
 #include <cstring>
 #include <signal.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <string>
 #include <vector>
 #include <fstream>
-#include <sys/utsname.h>
-#include <glib-unix.h>
 
+#ifdef _WIN32  /*modifications for Windows compilation */
+#include <glib.h>
+#include <unordered_map>
+#include <winsock2.h>
+#include <iphlpapi.h>
+#else
+#include <glib-unix.h>
+#include <sys/utsname.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
-#ifdef __linux__
-#include <netpacket/packet.h>
-#else
-#include <net/if_dl.h>
+# ifdef __linux__
+# include <netpacket/packet.h>
+# else
+# include <net/if_dl.h>
+# endif
 #endif
 
 #include "log.h"
@@ -43,7 +51,7 @@
 #include "renderers/video_renderer.h"
 #include "renderers/audio_renderer.h"
 
-#define VERSION "1.56"
+#define VERSION "1.60"
 
 #define DEFAULT_NAME "UxPlay"
 #define DEFAULT_DEBUG_LOG false
@@ -65,7 +73,7 @@ static logger_t *render_logger = NULL;
 static bool relaunch_video = false;
 static bool relaunch_server = false;
 static bool reset_loop = false;
-static uint open_connections = 0;
+static unsigned int open_connections = 0;
 static bool connections_stopped = false;
 static unsigned int server_timeout = 0;
 static unsigned int counter;
@@ -104,6 +112,7 @@ static bool use_random_hw_addr = false;
 static unsigned short display[5] = {0}, tcp[3] = {0}, udp[3] = {0};
 static bool debug_log = DEFAULT_DEBUG_LOG;
 static bool bt709_fix = false;
+static int max_connections = 2;
 
 /* 95 byte png file with a 1x1 white square (single pixel): placeholder for coverart*/
 static const unsigned char empty_image[] = {
@@ -225,6 +234,28 @@ static gboolean  sigterm_callback(gpointer loop) {
     return TRUE;
 }
 
+
+#ifdef _WIN32
+struct signal_handler {
+    GSourceFunc handler;
+    gpointer user_data;
+};
+
+static std::unordered_map<gint, signal_handler> u = {};
+
+void SignalHandler(int signum) {
+    if (signum == SIGTERM || signum == SIGINT) {
+        u[signum].handler(u[signum].user_data);
+    }
+}
+
+guint g_unix_signal_add(gint signum, GSourceFunc handler, gpointer user_data) {
+    u[signum] = signal_handler{handler, user_data};
+    (void) signal(signum, SignalHandler);
+    return 0;
+}
+#endif
+
 static void main_loop()  {
     guint connection_watch_id = 0;
     guint gst_bus_watch_id = 0;
@@ -260,8 +291,41 @@ static int parse_hw_addr (std::string str, std::vector<char> &hw_addr) {
 
 static std::string find_mac () {
 /*  finds the MAC address of a network interface *
- *  in a Linux, *BSD or macOS system.            */
+ *  in a Windows, Linux, *BSD or macOS system.   */
     std::string mac = "";
+    char str[3];
+#ifdef _WIN32
+    ULONG buflen = sizeof(IP_ADAPTER_ADDRESSES);
+    PIP_ADAPTER_ADDRESSES addresses = (IP_ADAPTER_ADDRESSES*) malloc(buflen);
+    if (addresses == NULL) { 					
+        return mac;
+    }
+    if (GetAdaptersAddresses(AF_UNSPEC, 0, NULL, addresses, &buflen) == ERROR_BUFFER_OVERFLOW) {
+        free(addresses);
+        addresses = (IP_ADAPTER_ADDRESSES*) malloc(buflen);
+        if (addresses == NULL) {
+            return mac;
+        }
+    }
+    if (GetAdaptersAddresses(AF_UNSPEC, 0, NULL, addresses, &buflen) == NO_ERROR) {
+        for (PIP_ADAPTER_ADDRESSES address = addresses; address != NULL; address = address->Next) {
+            if (address->PhysicalAddressLength != 6                 /* MAC has 6 octets */
+                || (address->IfType != 6 && address->IfType != 71)  /* Ethernet or Wireless interface */
+                || address->OperStatus != 1) {                      /* interface is up */
+                continue;
+            }
+            mac.erase();
+            for (int i = 0; i < 6; i++) {
+                sprintf(str,"%02x", int(address->PhysicalAddress[i]));
+                mac = mac + str;
+                if (i < 5) mac = mac + ":";
+            }
+	    break;
+        }
+    }
+    free(addresses);
+    return mac;
+#else
     struct ifaddrs *ifap, *ifaptr;
     int non_null_octets = 0;
     unsigned char octet[6], *ptr;
@@ -284,7 +348,6 @@ static std::string find_mac () {
 #endif
             if (non_null_octets) {
                 mac.erase();
-                char str[3];
                 for (int i = 0; i < 6 ; i++) {
                     sprintf(str,"%02x", octet[i]);
                     mac = mac + str;
@@ -295,6 +358,7 @@ static std::string find_mac () {
         }
     }
     freeifaddrs(ifap);
+#endif
     return mac;
 }
 
@@ -325,7 +389,7 @@ static void print_info (char *name) {
     printf("-nh       Do not add \"@hostname\" at the end of the AirPlay server name\n");
     printf("-s wxh[@r]Set display resolution [refresh_rate] default 1920x1080[@60]\n");
     printf("-o        Set display \"overscanned\" mode on (not usually needed)\n");
-    printf("-fs       Full-screen (only with Wayland and VAAPI plugins)\n");
+    printf("-fs       Full-screen (only works with X11, Wayland and VAAPI)\n");
     printf("-p        Use legacy ports UDP 6000:6001:7011 TCP 7000:7001:7100\n");
     printf("-p n      Use TCP and UDP ports n,n+1,n+2. range %d-%d\n", LOWEST_ALLOWED_PORT, HIGHEST_PORT);
     printf("          use \"-p n1,n2,n3\" to set each port, \"n1,n2\" for n3 = n2+1\n");
@@ -340,7 +404,7 @@ static void print_info (char *name) {
     printf("          another choice when using v4l2h264decode: v4l2convert\n");
     printf("-vs ...   Choose the GStreamer videosink; default \"autovideosink\"\n");
     printf("          some choices: ximagesink,xvimagesink,vaapisink,glimagesink,\n");
-    printf("          gtksink,waylandsink,osximagesink,kmssink,fpsdisplaysink etc.\n");
+    printf("          gtksink,waylandsink,osximagesink,kmssink,d3d11videosink etc.\n");
     printf("-vs 0     Streamed audio only, with no video display window\n");
     printf("-v4l2     Use Video4Linux2 for GPU hardware h264 decoding\n");
     printf("-bt709    A workaround (bt709 color) that may be needed with -rpi\n"); 
@@ -349,11 +413,13 @@ static void print_info (char *name) {
     printf("-rpifb    Same as \"-rpi -vs kmssink\" for RPi using framebuffer.\n");
     printf("-rpiwl    Same as \"-rpi -vs waylandsink\" for RPi using Wayland.\n");
     printf("-as ...   Choose the GStreamer audiosink; default \"autoaudiosink\"\n");
-    printf("          choices: pulsesink,alsasink,osssink,oss4sink,osxaudiosink\n");
+    printf("          some choices:pulsesink,alsasink,pipewiresink,jackaudiosink,\n");
+    printf("          osssink,oss4sink,osxaudiosink,wasapisink,directsoundsink.\n");
     printf("-as 0     (or -a)  Turn audio off, streamed video only\n");
     printf("-ca <fn>  In Airplay Audio (ALAC) mode, write cover-art to file <fn>\n");
     printf("-reset n  Reset after 3n seconds client silence (default %d, 0=never)\n", NTP_TIMEOUT_LIMIT);
-    printf("-nc       do Not Close video window when client stops mirroring\n");  
+    printf("-nc       do Not Close video window when client stops mirroring\n");
+    printf("-nohold   Drop current connection when new client connects.\n");
     printf("-FPSdata  Show video-streaming performance reports sent by client.\n");
     printf("-fps n    Set maximum allowed streaming framerate, default 30\n");
     printf("-f {H|V|I}Horizontal|Vertical flip, or both=Inversion=rotate 180 deg\n");
@@ -485,16 +551,27 @@ static bool get_videorotate (const char *str, videoflip_t *videoflip) {
 }
 
 static void append_hostname(std::string &server_name) {
+#ifdef _WIN32   /*modification for compilation on Windows */
+    char buffer[256] = "";
+    unsigned long size = sizeof(buffer);
+    if (GetComputerNameA(buffer, &size)) {
+        std::string name = server_name;
+        name.append("@");
+        name.append(buffer);
+        server_name = name;
+    }
+#else
     struct utsname buf;
     if (!uname(&buf)) {
-      std::string name = server_name;
-      name.append("@");
-      name.append(buf.nodename);
-      server_name = name;
+        std::string name = server_name;
+        name.append("@");
+        name.append(buf.nodename);
+        server_name = name;
     }
+#endif
 }
 
-void parse_arguments (int argc, char *argv[]) {    
+static void parse_arguments (int argc, char *argv[]) {    
     // Parse arguments
     for (int i = 1; i < argc; i++) {
         std::string arg(argv[i]);
@@ -645,7 +722,7 @@ void parse_arguments (int argc, char *argv[]) {
             }
         } else if (arg == "-vdmp") {
             dump_video = true;
-            if (option_has_value(i, argc, arg, argv[i+1])) {
+            if (i < argc - 1 && *argv[i+1] != '-') {
                 unsigned int n = 0;
                 if (get_value (argv[++i], &n)) {
                     if (n == 0) {
@@ -662,10 +739,9 @@ void parse_arguments (int argc, char *argv[]) {
                     video_dumpfile_name.append(argv[i]);
                 }
             }
-	    printf("dump_video %d %d %s \n",dump_video, video_dump_limit, video_dumpfile_name.c_str());
         } else if (arg == "-admp") {
             dump_audio = true;
-            if (option_has_value(i, argc, arg, argv[i+1])) {
+            if (i < argc - 1 && *argv[i+1] != '-') {
                 unsigned int n = 0;
                 if (get_value (argv[++i], &n)) {
                     if (n == 0) {
@@ -690,13 +766,146 @@ void parse_arguments (int argc, char *argv[]) {
                 LOGE("option -ca must be followed by a filename for cover-art output");
                 exit(1);
             }
-        } else if (arg == "-bt709" ) {
+        } else if (arg == "-bt709") {
             bt709_fix = true;
+        } else if (arg == "-nohold") {
+            max_connections = 3;
         } else {
             LOGE("unknown option %s, stopping\n",argv[i]);
             exit(1);
         }
     }
+}
+
+static void process_metadata(int count, const char *dmap_tag, const unsigned char* metadata, int datalen) {
+    int dmap_type = 0;
+    /* DMAP metadata items can be strings (dmap_type = 9); other types are byte, short, int, long, date, and list.  *
+     * The DMAP item begins with a 4-character (4-letter) "dmap_tag" string that identifies the type.               */
+
+    if (debug_log) {
+        printf("%d: dmap_tag [%s], %d\n", count, dmap_tag, datalen);
+    }
+
+    /* String-type DMAP tags seen in Apple Music Radio are processed here.   *
+     * (DMAP tags "asal", "asar", "ascp", "asgn", "minm" ). TODO expand this */  
+    
+    if (datalen == 0) {
+        return;
+    }
+
+    if (dmap_tag[0] == 'a' && dmap_tag[1] == 's') {
+        dmap_type = 9;
+        switch (dmap_tag[2]) {
+        case 'a':
+            switch (dmap_tag[3]) {
+            case 'a':
+                printf("Album artist: ");  /*asaa*/
+                break;
+            case 'l':
+                printf("Album: ");  /*asal*/
+                break;
+            case 'r':
+                printf("Artist: ");  /*asar*/
+                break;
+            default:
+                dmap_type = 0;
+                break;
+            }
+            break;    
+        case 'c':
+            switch (dmap_tag[3]) {
+            case 'm':
+                printf("Comment: ");  /*ascm*/
+                break;
+            case 'n':
+                printf("Content description: ");  /*ascn*/
+                break;
+            case 'p':
+                printf("Composer: ");  /*ascp*/
+                break;
+            case 't':
+                printf("Category: ");  /*asct*/
+                break;
+            default:
+                dmap_type = 0;
+                break;
+            }
+            break;
+        case 's':
+            switch (dmap_tag[3]) {
+            case 'a':
+                printf("Sort Artist: "); /*assa*/
+                break;
+            case 'c':
+                printf("Sort Composer: ");  /*assc*/
+                break;
+            case 'l':
+                printf("Sort Album artist: ");  /*assl*/
+                break;
+            case 'n':
+                printf("Sort Name: ");  /*assn*/
+                break;
+            case 's':
+                printf("Sort Series: ");  /*asss*/
+                break;
+            case 'u':
+                printf("Sort Album: ");  /*assu*/
+                break;
+            default:
+                dmap_type = 0;
+                break;
+            }
+            break;
+        default:
+	    if (strcmp(dmap_tag, "asdt") == 0) {
+                printf("Description: ");
+            } else if (strcmp (dmap_tag, "asfm") == 0) {
+                printf("Format: ");
+            } else if (strcmp (dmap_tag, "asgn") == 0) {
+                printf("Genre: ");
+            } else {
+                dmap_type = 0;
+            }
+            break;
+        }
+    } else if (strcmp (dmap_tag, "minm") == 0) {
+        dmap_type = 9;
+        printf("Title: ");
+    }
+
+    for (int i = 0; i < datalen; i++) {
+        if (dmap_type == 9) {
+            printf("%c",(char) metadata[i]);
+        } else if (debug_log) {
+            if (i > 0 && i % 16 == 0) printf("\n");
+            printf("%2.2x ", (int) metadata[i]);
+        }
+    }
+    printf("\n");
+}
+
+static int parse_dmap_header(const unsigned char *metadata, char *tag, int *len) {
+    const unsigned char *header = metadata;
+
+    bool istag = true;
+    for (int i = 0; i < 4; i++) {
+        tag[i] =  (char) *header;
+	if (!isalpha(tag[i])) {
+            istag = false;
+        }
+        header++;
+    }
+
+    *len = 0;
+    for (int i = 0; i < 4; i++) {
+        *len <<= 8;
+        *len += (int) *header;
+        header++;
+    }
+    if (!istag || *len < 0) {
+        return 1;
+    }
+    return 0;
 }
 
 int main (int argc, char *argv[]) {
@@ -710,9 +919,32 @@ int main (int argc, char *argv[]) {
 #endif
 
     parse_arguments (argc, argv);
-    
+
+#ifdef _WIN32    /* don't buffer stdout in WIN32 when debug_log = false */
+    if (!debug_log) {
+      setbuf(stdout, NULL);
+    }
+#endif
+
+    LOGI("UxPlay %s: An Open-Source AirPlay mirroring and audio-streaming server.", VERSION);
+
     if (audiosink == "0") {
         use_audio = false;
+        dump_audio = false;
+    }
+    if (dump_video) {
+        if (video_dump_limit > 0) {
+             printf("dump video using \"-vdmp %d %s\"\n", video_dump_limit, video_dumpfile_name.c_str());
+	} else {
+             printf("dump video using \"-vdmp %s\"\n", video_dumpfile_name.c_str());
+        }
+    }
+    if (dump_audio) {
+        if (audio_dump_limit > 0) {
+            printf("dump audio using \"-admp %d %s\"\n", audio_dump_limit, audio_dumpfile_name.c_str());
+        } else {
+            printf("dump audio using \"-admp %s\"\n",  audio_dumpfile_name.c_str());
+        }
     }
 
 #if __APPLE__
@@ -731,7 +963,15 @@ int main (int argc, char *argv[]) {
     }
 
     if (fullscreen && use_video) {
-        videosink.append(" fullscreen=true");
+        if (videosink == "waylandsink" || videosink == "vaapisink") {
+            videosink.append(" fullscreen=true");
+	}
+    }
+
+    if (videosink == "d3d11videosink"  && use_video) {
+        videosink.append(" fullscreen-toggle-mode=alt-enter");  
+        printf("d3d11videosink is being used with option fullscreen-toggle-mode=alt-enter\n"
+               "Use Alt-Enter key combination to toggle into/out of full-screen mode\n");
     }
 
     if (bt709_fix && use_video) {
@@ -740,12 +980,15 @@ int main (int argc, char *argv[]) {
     }
 
     if (do_append_hostname) append_hostname(server_name);
-    
+
+    if (!gstreamer_init()) {
+        LOGE ("stopping");
+        exit (1);
+    }
+
     render_logger = logger_init();
     logger_set_callback(render_logger, log_callback, NULL);
     logger_set_level(render_logger, debug_log ? LOGGER_DEBUG : LOGGER_INFO);
-
-    gstreamer_init();
 
     if (use_audio) {
         audio_renderer_init(render_logger, audiosink.c_str());
@@ -755,10 +998,10 @@ int main (int argc, char *argv[]) {
 
     if (use_video) {
         video_renderer_init(render_logger, server_name.c_str(), videoflip, video_parser.c_str(),
-                            video_decoder.c_str(), video_converter.c_str(), videosink.c_str());
+                            video_decoder.c_str(), video_converter.c_str(), videosink.c_str(), &fullscreen);
         video_renderer_start();
     }
-    
+
     if (udp[0]) LOGI("using network ports UDP %d %d %d TCP %d %d %d",
                       udp[0],udp[1], udp[2], tcp[0], tcp[1], tcp[2]);
 
@@ -799,7 +1042,7 @@ int main (int argc, char *argv[]) {
         if (use_video && close_window) {
             video_renderer_destroy();
             video_renderer_init(render_logger, server_name.c_str(), videoflip, video_parser.c_str(),
-                                video_decoder.c_str(), video_converter.c_str(), videosink.c_str());
+                                video_decoder.c_str(), video_converter.c_str(), videosink.c_str(), &fullscreen);
             video_renderer_start();
         }
         if (reset_loop) goto reconnect;
@@ -841,15 +1084,15 @@ int main (int argc, char *argv[]) {
 extern "C" void conn_init (void *cls) {
     open_connections++;
     connections_stopped = false;
-    LOGI("Open connections: %i", open_connections);
+    //LOGD("Open connections: %i", open_connections);
     //video_renderer_update_background(1);
 }
 
 extern "C" void conn_destroy (void *cls) {
     //video_renderer_update_background(-1);
     open_connections--;
-    LOGI("Open connections: %i", open_connections);
-    if(!open_connections) {
+    //LOGD("Open connections: %i", open_connections);
+    if (!open_connections) {
         connections_stopped = true;
     }
 }
@@ -939,7 +1182,9 @@ extern "C" void audio_get_format (void *cls, unsigned char *ct, unsigned short *
 }
 
 extern "C" void video_report_size(void *cls, float *width_source, float *height_source, float *width, float *height) {
-    video_renderer_size(width_source, height_source, width, height);
+    if (use_video) {
+        video_renderer_size(width_source, height_source, width, height);
+    }
 }
 
 extern "C" void audio_set_coverart(void *cls, const void *buffer, int buflen) {
@@ -948,42 +1193,44 @@ extern "C" void audio_set_coverart(void *cls, const void *buffer, int buflen) {
         LOGI("coverart size %d written to %s", buflen,  coverart_filename.c_str());
     }
 }
+
 extern "C" void audio_set_metadata(void *cls, const void *buffer, int buflen) {
-    unsigned char mark[]={ 0x00, 0x00, 0x00 }; /*daap seperator mark */
-    if (buflen > 4) {
-        printf("==============Audio Metadata=============\n");
-        const unsigned char *metadata = (const unsigned char *) buffer;
-        const char *tag = (const char *) buffer;
-        int len;
-        metadata += 4;
-        for (int i = 4; i < buflen; i++) {
-            if (memcmp (metadata, mark, 3) == 0 && (len = (int) *(metadata + 3))) { 
-                bool found_text = true;
-                if (strcmp (tag, "asal") == 0) {
-                    printf("Album: ");
-                } else if (strcmp (tag, "asar") == 0) {
-                    printf("Artist: ");
-                } else if (strcmp (tag, "ascp") == 0) {
-                    printf("Composer: ");
-                } else if (strcmp (tag, "asgn") == 0) {
-                    printf("Genre: ");
-                } else if (strcmp (tag, "minm") == 0) {
-                    printf("Title: ");
-                } else {
-                    found_text = false;
-                }
-                if (found_text) {
-                    const unsigned char *text = metadata + 4;
-                    for (int j = 0; j < len; j++) {
-                        printf("%c", *text);
-                        text++;
-                    }
-                    printf("\n");
-                }
-            }
-            metadata++;
-            tag++;
+    char dmap_tag[5] = {0x0};
+    const unsigned char *metadata = (const  unsigned char *) buffer;
+    int datalen;
+    int count = 0;
+
+    printf("==============Audio Metadata=============\n");
+
+    if (buflen < 8) {
+        LOGE("received invalid metadata, length %d < 8", buflen);
+        return;
+    } else if (parse_dmap_header(metadata, dmap_tag, &datalen)) {
+        LOGE("received invalid metadata, tag [%s]  datalen %d", dmap_tag, datalen);
+        return;
+    }
+    metadata += 8;
+    buflen -= 8;
+
+    if (strcmp(dmap_tag, "mlit") != 0 || datalen != buflen) {
+        LOGE("received metadata with tag %s, but is not a DMAP listingitem, or datalen = %d !=  buflen %d",
+             dmap_tag, datalen, buflen);
+        return;
+    }
+    while (buflen >= 8) {
+        count++;
+        if (parse_dmap_header(metadata, dmap_tag, &datalen)) {
+            LOGE("received metadata with invalid DMAP header:  tag = [%s],  datalen = %d", dmap_tag, datalen);
+            return;
         }
+        metadata += 8;
+        buflen -= 8;
+        process_metadata(count, (const char *) dmap_tag, metadata, datalen);
+        metadata += datalen;
+        buflen -= datalen;
+    }
+    if (buflen != 0) {
+      LOGE("%d bytes of metadata were not processed", buflen);
     }
 }
 
@@ -1013,6 +1260,7 @@ extern "C" void log_callback (void *cls, int level, const char *msg) {
 
 int start_raop_server (std::vector<char> hw_addr, std::string name, unsigned short display[5],
                   unsigned short tcp[3], unsigned short udp[3], bool debug_log) {
+    int dnssd_error;
     raop_callbacks_t raop_cbs;
     memset(&raop_cbs, 0, sizeof(raop_cbs));
     raop_cbs.conn_init = conn_init;
@@ -1029,8 +1277,8 @@ int start_raop_server (std::vector<char> hw_addr, std::string name, unsigned sho
     raop_cbs.audio_set_metadata = audio_set_metadata;
     raop_cbs.audio_set_coverart = audio_set_coverart;
     
-    /* set max number of connections = 2 */
-    raop = raop_init(2, &raop_cbs);
+    /* set max number of connections = 2 to protect against capture by new client */
+    raop = raop_init(max_connections, &raop_cbs);
     if (raop == NULL) {
         LOGE("Error initializing raop!");
         return -1;
@@ -1059,9 +1307,8 @@ int start_raop_server (std::vector<char> hw_addr, std::string name, unsigned sho
     raop_start(raop, &port);
     raop_set_port(raop, port);
 
-    int error;
-    dnssd = dnssd_init(name.c_str(), strlen(name.c_str()), hw_addr.data(), hw_addr.size(), &error);
-    if (error) {
+    dnssd = dnssd_init(name.c_str(), strlen(name.c_str()), hw_addr.data(), hw_addr.size(), &dnssd_error);
+    if (dnssd_error) {
         LOGE("Could not initialize dnssd library!");
         stop_raop_server();
         return -2;
@@ -1069,13 +1316,29 @@ int start_raop_server (std::vector<char> hw_addr, std::string name, unsigned sho
 
     raop_set_dnssd(raop, dnssd);
 
-    dnssd_register_raop(dnssd, port);
+    if ((dnssd_error = dnssd_register_raop(dnssd, port))) {
+        if (dnssd_error == -65537) {
+             LOGE("No DNS-SD Server found (DNSServiceRegister call returned kDNSServiceErr_Unknown)");
+        } else {
+             LOGE("dnssd_register_raop failed with error code %d\n"
+                  "mDNS Error codes are in range FFFE FF00 (-65792) to FFFE FFFF (-65537) "
+                  "(see Apple's dns_sd.h)", dnssd_error);
+        }
+        stop_raop_server();
+        return -3;
+    }
     if (tcp[2]) {
         port = tcp[2];
     } else {
-      port = (port != HIGHEST_PORT ? port + 1 : port - 1);
+        port = (port != HIGHEST_PORT ? port + 1 : port - 1);
     }
-    dnssd_register_airplay(dnssd, port);
+    if ((dnssd_error = dnssd_register_airplay(dnssd, port))) {
+        LOGE("dnssd_register_airplay failed with error code %d\n"
+             "mDNS Error codes are in range FFFE FF00 (-65792) to FFFE FFFF (-65537) "
+             "(see Apple's dns_sd.h)", dnssd_error);
+        stop_raop_server();
+        return -4;
+    }
 
     return 0;
 }
