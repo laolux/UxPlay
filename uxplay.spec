@@ -1,7 +1,7 @@
 
 
 Name:    uxplay
-Version: 1.56
+Version: 1.60
 Release: 1%{?dist}
 Summary: UxPlay is an AirPlay server for Linux
 
@@ -45,6 +45,72 @@ UxPlay is an AirPlay server for Linux. It lets you stream the display content of
 %{_mandir}/man1/uxplay.1.gz
 
 %changelog
+* Wed Dec 21 2022 laolux <25555671+laolux@users.noreply.github.com> 1.60-1
+- 1.60 release (fduncanh@gmail.com)
+- added cmake message that -DZOOMFIX=ON is no longer used (fduncanh@gmail.com)
+- add code to detect unsupported AirPlay 2 "Remote Control" protocol
+  (fduncanh@gmail.com)
+- add error message if dnssd_register_airplay or _raop fails
+  (fduncanh@gmail.com)
+- corrected parsing of DMAP metadata (fduncanh@gmail.com)
+- minor cosmetic fix (fduncanh@gmail.com)
+- Changelog for 1.59, add initial terminal message with uxplay version
+  (fduncanh@gmail.com)
+- dont report sizes if option -vs 0 is used (fix prevents segfault)
+  (fduncanh@gmail.com)
+- yet another new fullscreen code cleanup (fduncanh@gmail.com)
+- dmap "code: should be called dmap "tag" (fduncanh@gmail.com)
+- minor cleanup of new fullscreen code (fduncanh@gmail.com)
+- more fixes of fullscreen toggle so -fs also works for X11
+  (fduncanh@gmail.com)
+- CMakeLists.txt: update to use X_DISPLAY_FIX by default (fduncanh@gmail.com)
+- fixes to new full-screen toggle code (fduncanh@gmail.com)
+- add F11 shortcut to toggle into fullscreen mode (gerbon@gerbon-HP-
+  EliteDesk-800-G4-SFF)
+- uxplay.cpp: cleanup handling of DMAP/DAAP AirPlay-audio metadata
+  (fduncanh@gmail.com)
+- update README (fduncanh@gmail.com)
+- remove (show in -d mode only) terminal messages about connections +edits to
+  README (fduncanh@gmail.com)
+- update llhttp to v8.1.0 (fduncanh@gmail.com)
+- add -nohold option: drop current client when new client connects
+  (fduncanh@gmail.com)
+- README updates (fduncanh@gmail.com)
+- rearrange previous commit (avoid exit with active logger)
+  (fduncanh@gmail.com)
+- UxPlay 1.57 (fduncanh@gmail.com)
+- more graceful exit if required GStreamer plugins are missing
+  (fduncanh@gmail.com)
+- do not call ISSET with invalid mirror_data_sock = -1. (prevents  Archlinux
+  coredump with CFLAGS = -DFORTIFY_SOURCE) (fduncanh@gmail.com)
+- ignore ZOOMFIX request if GStreamer >= 1.20 (fduncanh@gmail.com)
+- add fullscreen-toggle-mode=alt-enter to -vs d3d11videosink
+  (fduncanh@gmail.com)
+- Add missing LGPL headers (fduncanh@gmail.com)
+- README: add info about fullscreen mode on Windows (fduncanh@gmail.com)
+- correct incorrect UDP port for -p in Troubleshooting (fduncanh@gmail.com)
+- minor cleanup of parsing for -admp, -vdmp options (fduncanh@gmail.com)
+- iPod Touch gen 5 and later is supported; iOS 16 supports UxPlay
+  (fduncanh@gmail.com)
+- Update README: Raspberry Pi OS no longer needs a patch (fduncanh@gmail.com)
+- changes to README for windows build (fduncanh@gmail.com)
+- WIN32 audio updates, README and manpage added audioresample to audio pipeline
+  for WIN32 (fduncanh@gmail.com)
+- add WIN32 code for finding system MAC address don't buffer stdout in WIN32
+  when debug_log=false (fduncanh@gmail.com)
+- update README for building on Windows (thanks to @aelmod)
+  (fduncanh@gmail.com)
+- modified keepalive settings for WIN32 (fduncanh@gmail.com)
+- CMakeLists.txt: add WIN32 compilation (from @aelmod) (fduncanh@gmail.com)
+- uxplay.cpp: fixes by @aelmod for compilation on Windows (fduncanh@gmail.com)
+- raop airplay lib: fixes by @aelmod for compilation on Windows
+  (fduncanh@gmail.com)
+- uxplay.cpp: small cleanup; also remove unused WIN32 code in lib/threads.h.
+  (fduncanh@gmail.com)
+- revert a change that used assert in a way that fails with NDEBUG (pointed out
+  by @heweishing, thanks) (fduncanh@gmail.com)
+- README edits + cosmetic changes to manpage, -h output (fduncanh@gmail.com)
+
 * Mon Aug 01 2022 laolux <25555671+laolux@users.noreply.github.com> 1.56-1
 - Automatic commit of package [uxplay] release [1.55-1].
   (25555671+laolux@users.noreply.github.com)
