@@ -1,4 +1,4 @@
-# UxPlay 1.60: AirPlay-Mirror and AirPlay-Audio server for Linux, macOS, and Unix (now also runs on Windows).
+# UxPlay 1.61: AirPlay-Mirror and AirPlay-Audio server for Linux, macOS, and Unix (now also runs on Windows).
 
 ### Now developed at the GitHub site <https://github.com/FDH2/UxPlay> (where all user issues should be posted).
 
@@ -58,10 +58,10 @@ pulled from the new main [UxPlay site](https://github.com/FDH2/UxPlay)).
 UxPlay is tested on a number of systems, including (among others) Debian
 10.11 "Buster" and 11.2 "Bullseye", Ubuntu 20.04 LTS and 22.04.1 LTS,
 Linux Mint 20.3, Pop!\_OS 22.04 (NVIDIA edition), Rocky Linux 8.6 (a
-CentOS successor), OpenSUSE 15.4, Arch Linux 22.10, macOS 12.3 (Intel
-and M1), FreeBSD 13.1. On Raspberry Pi, it is tested on Raspberry Pi OS
-(Bullseye) (32- and 64-bit), Ubuntu 22.04.1, and Manjaro RPi4 22.10.
-Also tested on 64-bit Windows 10 and 11.
+CentOS successor), Fedora 36, OpenSUSE 15.4, Arch Linux 22.10, macOS
+12.3 (Intel and M1), FreeBSD 13.1. On Raspberry Pi, it is tested on
+Raspberry Pi OS (Bullseye) (32- and 64-bit), Ubuntu 22.04.1, and Manjaro
+RPi4 22.10. Also tested on 64-bit Windows 10 and 11.
 
 Its main use is to act like an AppleTV for screen-mirroring (with audio)
 of iOS/iPadOS/macOS clients (iPhone, iPod Touch, iPad, Mac computers) in
@@ -296,8 +296,10 @@ running, control it with
 avahi-daemon.service). If UxPlay is seen, but the client fails to
 connect when it is selected, there may be a firewall on the server that
 prevents UxPlay from receiving client connection requests unless some
-network ports are opened. See [Troubleshooting](#troubleshooting) below
-for help with this or other problems.
+network ports are opened: if a firewall is active, also open UDP port
+5353 (for mDNS queries) needed by Avahi. See
+[Troubleshooting](#troubleshooting) below for help with this or other
+problems.
 
 -   By default, UxPlay is locked to its current client until that client
     drops the connection; the option `-nohold` modifies this behavior so
@@ -384,16 +386,23 @@ running if the ssh session is closed. Terminal output is saved to FILE
 
 ### Non-Debian-based Linux or \*BSD
 
--   **Red Hat, Fedora, CentOS (now continued as Rocky Linux or Alma
-    Linux):** (sudo yum install) openssl-devel libplist-devel
-    avahi-compat-libdns_sd-devel (some from the "PowerTools" add-on
-    repository) (+libX11-devel for fullscreen X11, and "ZOOMFIX" if
-    needed). The required GStreamer packages are: gstreamer1-devel
+-   **Red Hat, or clones like CentOS (now continued as Rocky Linux or
+    Alma Linux):** (sudo dnf install, or sudo yum install) openssl-devel
+    libplist-devel avahi-compat-libdns_sd-devel (some from the
+    "CodeReady" add-on repository, called "PowerTools" by clones)
+    (+libX11-devel for fullscreen X11, and "ZOOMFIX" if needed). The
+    required GStreamer packages are: gstreamer1-devel
     gstreamer1-plugins-base-devel gstreamer1-libav
     gstreamer1-plugins-bad-free (+ gstreamer1-vaapi for intel graphics);
     you may need to get some of them (in particular gstreamer1-libav)
     from [rpmfusion.org](https://rpmfusion.org) (which provides packages
     including plugins that RedHat does not ship for license reasons).
+    *\[In recent **Fedora**, the libav plugin package is renamed to
+    "gstreamer1-plugin-libav", which now needs the RPM Fusion package
+    ffmpeg-libs for the patent-encumbered code which RedHat does not
+    provide: check with "`rpm -qi ffmpeg-libs`" that it lists "Packager"
+    as RPM Fusion; if this is not installed, uxplay will fail to start,
+    with error: **no element "avdec_aac"** \]*.
 
 -   **OpenSUSE:** (sudo zypper install) libopenssl-devel libplist-devel
     avahi-compat-mDNSResponder-devel (+ libX11-devel for fullscreen X11,
@@ -413,10 +422,10 @@ running if the ssh session is closed. Terminal output is saved to FILE
 
 -   **FreeBSD:** (sudo pkg install) libplist gstreamer1,
     gstreamer1-libav, gstreamer1-plugins, gstreamer1-plugins-\* (\* =
-    core, good, bad, x, gtk, gl, vulkan, pulse ...), (+ gstreamer1-vaapi
-    for Intel graphics). Either avahi-libdns or mDNSResponder must also
-    be installed to provide the dns_sd library. OpenSSL is already
-    installed as a System Library.
+    core, good, bad, x, gtk, gl, vulkan, pulse, v4l2, ...), (+
+    gstreamer1-vaapi for Intel graphics). Either avahi-libdns or
+    mDNSResponder must also be installed to provide the dns_sd library.
+    OpenSSL is already installed as a System Library.
 
 ## Building UxPlay on macOS: **(Intel X86_64 and "Apple Silicon" M1/M2 Macs)**
 
@@ -797,14 +806,9 @@ network interface detected) a random MAC address will be used even if
 option **-m** was not specified. (Note that a random MAC address will be
 different each time UxPlay is started).
 
-**-t *timeout*** will cause the server to relaunch (without stopping
-uxplay) if no connections have been present during the previous
-*timeout* seconds. You may wish to use this if the Server is not visible
-to new Clients that were inactive when the Server was launched, and an
-idle Bonjour registration eventually becomes unavailable for new
-connections (this is a workaround for what may be due to a problem with
-your DNS-SD or Avahi setup). *This option is currently disabled in
-macOS, for the same reason that requires the -nc option.*
+**-t *timeout*** \[This option was removed in UxPlay v.1.61.\] It was a
+workaround for an Avahi problem that occurs when there is a firewall and
+network port UDP 5353 (for mDNS queries) was not opened.
 
 **-vdmp** Dumps h264 video to file videodump.h264. -vdmp n dumps not
 more than n NAL units to videodump.x.h264; x= 1,2,... increases each
@@ -844,39 +848,60 @@ correct one; on 64-bit Ubuntu, this is done by running
 `export OPENSSL_ROOT_DIR=/usr/lib/X86_64-linux-gnu/` before running
 cmake.
 
-### 1. uxplay starts, but stalls or stops after "Initialized server socket(s)" appears, *without any server name showing on the client*.
+### 1. uxplay starts, but either stalls or stops after "Initialized server socket(s)" appears (*without the server name showing on the client*).
 
-Stalling this way, with *no* server name showing *on the client* as
-available, probably means that your network **does not have a running
-Bonjour/zeroconf DNS-SD server.**
+If UxPlay stops with the "No DNS-SD Server found" message, this means
+that your network **does not have a running Bonjour/zeroconf DNS-SD
+server.**
 
-UxPlay used to stall silently if DNS-SD service registration failed, but
-now stops with an error message returned by the DNSServiceRegister
-function, which will probably be -65537 (0xFFFE FFFF, or
-kDNSServiceErr_Unknown) if no DNS-SD server was found: mDNS error codes
-are in the range FFFE FF00 (-65792) to FFFE FFFF (-65537), and are
-listed in Apple's dnssd.h file. An older version of this (the one used
-by avahi) is found
+Before v1.60, UxPlay used to stall silently if DNS-SD service
+registration failed, but now stops with an error message returned by the
+DNSServiceRegister function, which will probably be -65537 (0xFFFE FFFF,
+or kDNSServiceErr_Unknown) if no DNS-SD server was found: other mDNS
+error codes are in the range FFFE FF00 (-65792) to FFFE FFFF (-65537),
+and are listed in Apple's dnssd.h file. An older version of this (the
+one used by avahi) is found
 [here](https://github.com/lathiat/avahi/blob/master/avahi-compat-libdns_sd/dns_sd.h).
 A few additional error codes are defined in a later version from
 [Apple](https://opensource.apple.com/source/mDNSResponder/mDNSResponder-544/mDNSShared/dns_sd.h.auto.html).
 
 On Linux, make sure Avahi is installed, and start the avahi-daemon
 service on the system running uxplay (your distribution will document
-how to do this). Some systems may instead use the mdnsd daemon as an
-alternative to provide DNS-SD service. *(FreeBSD offers both
-alternatives, but only Avahi was tested: one of the steps needed for
-getting Avahi running on a FreeBSD system is to edit
-`/usr/local/etc/avahi/avahi-daemon.conf` to uncomment a line for airplay
-support.*)
+how to do this, for example:
+`sudo systemctl [enable,disable,start,stop,status] avahi-daemon`). You
+might need to edit the avahi-daemon.conf file (it is typically in
+/etc/avahi/, find it with "`sudo find /etc -name avahi-daemon.conf`"):
+make sure that "disable-publishing" is **not** a selected option). Some
+systems may instead use the mdnsd daemon as an alternative to provide
+DNS-SD service. *(FreeBSD offers both alternatives, but only Avahi was
+tested: one of the steps needed for getting Avahi running on a FreeBSD
+system is to edit `/usr/local/etc/avahi/avahi-daemon.conf` to uncomment
+a line for airplay support.*)
 
-After starting uxplay, use the utility `avahi-browse -a -t` in a
-different terminal window on the server to verify that the UxPlay
-AirTunes and AirPlay services are correctly registered (only the
-AirTunes service is used in the "Legacy" AirPlay Mirror mode used by
-UxPlay). If the UxPlay service is listed by avahi-browse, but is not
-seen by the client, the problem is likely to be a problem with the local
-network.
+If UxPlay stalls *without an error message* and *without the server name
+showing on the client*, this is either pre-UxPlay-1.60 behavior when no
+DNS-SD server was found, or a network problem. After starting uxplay,
+use the utility `avahi-browse -a -t` in a different terminal window on
+the server to verify that the UxPlay AirTunes and AirPlay services are
+correctly registered (only the AirTunes service is used in the "Legacy"
+AirPlay Mirror mode used by UxPlay).
+
+The results returned by avahi-browse should show entries for uxplay like
+
+    +   eno1 IPv6 UxPlay                                        AirPlay Remote Video local
+    +   eno1 IPv4 UxPlay                                        AirPlay Remote Video local
+    +     lo IPv4 UxPlay                                        AirPlay Remote Video local
+    +   eno1 IPv6 863EA27598FE@UxPlay                           AirTunes Remote Audio local
+    +   eno1 IPv4 863EA27598FE@UxPlay                           AirTunes Remote Audio local
+    +     lo IPv4 863EA27598FE@UxPlay                           AirTunes Remote Audio local
+
+If only the loopback ("lo") entries are shown, a firewall on the UxPlay
+host is probably blocking full DNS-SD service, and you need to open the
+default UDP port 5353 for mDNS requests, as loopback-based DNS-SD
+service is unreliable.
+
+If the UxPlay service is listed by avahi-browse, but is not seen by the
+client, the problem is likely to be a problem with the local network.
 
 ### 2. uxplay starts, but stalls after "Initialized server socket(s)" appears, *with the server name showing on the client* (but the client fails to connect when the UxPlay server is selected).
 
@@ -1034,6 +1059,11 @@ the client by the AirPlay server) to be set. The "features" code and
 other settings are set in `UxPlay/lib/dnssdint.h`.
 
 # Changelog
+
+1.61 2022-12-30 Removed -t option (workaround for an Avahi issue,
+correctly solved by opening network port UDP 5353 in firewall). Remove
+-g debug flag from CMAKE_CFLAGS. Postpend (instead of prepend) build
+environment CFLAGS to CMAKE_CFLAGS. Refactor parts of uxplay.cpp
 
 1.60 2022-12-15 Added exit with error message if DNSServiceRegister
 fails (instead of just stalling). Test for Client's attempt to using
