@@ -1,7 +1,7 @@
 
 
 Name:    uxplay
-Version: 1.60
+Version: 1.61
 Release: 1%{?dist}
 Summary: UxPlay is an AirPlay server for Linux
 
@@ -45,6 +45,23 @@ UxPlay is an AirPlay server for Linux. It lets you stream the display content of
 %{_mandir}/man1/uxplay.1.gz
 
 %changelog
+* Fri Dec 30 2022 laolux <25555671+laolux@users.noreply.github.com> 1.61-1
+- UxPlay 1.61 remove -t option and CMakeList.txt fixes; refactor uxplay.cpp
+  (fduncanh@gmail.com)
+- uxplay.cpp remove redundant declarations (fduncanh@gmail.com)
+- uxplay.cpp move dnssd items to above start_raop_server (fduncanh@gmail.com)
+- uxplay.cpp move main program to end of file (fduncanh@gmail.com)
+- refactor start_raop_server to separate start_dnssd (fduncanh@gmail.com)
+- update README: avahi configuration (fduncanh@gmail.com)
+- postpend (instead of prepend) any $CFLAGS from build environment to Cflags
+  (fduncanh@gmail.com)
+- lib/CMakeLists.txt: remove debug option -g from Cflags (fduncanh@gmail.com)
+- add modified instructions for Fedora (fduncanh@gmail.com)
+- README update for new behavior if DNS_SD  registration fails
+  (fduncanh@gmail.com)
+- cosmetic change (keep lib free of UxPlay mentions in case of re-use) make
+  NOHOLD feature a #define item (fduncanh@gmail.com)
+
 * Wed Dec 21 2022 laolux <25555671+laolux@users.noreply.github.com> 1.60-1
 - 1.60 release (fduncanh@gmail.com)
 - added cmake message that -DZOOMFIX=ON is no longer used (fduncanh@gmail.com)
