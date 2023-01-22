@@ -1,7 +1,7 @@
 
 
 Name:    uxplay
-Version: 1.61
+Version: 1.62
 Release: 1%{?dist}
 Summary: UxPlay is an AirPlay server for Linux
 
@@ -45,6 +45,53 @@ UxPlay is an AirPlay server for Linux. It lets you stream the display content of
 %{_mandir}/man1/uxplay.1.gz
 
 %changelog
+* Mon Jan 23 2023 laolux <25555671+laolux@users.noreply.github.com> 1.62-1
+- Automatic commit of package [uxplay] release [1.61-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.60-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.56-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.55-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.47-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.46b-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.46-1].
+  (25555671+laolux@users.noreply.github.com)
+- Initialized to use tito. (25555671+laolux@users.noreply.github.com)
+- Revert default maxFPS back from 60 to 30. (fduncanh@gmail.com)
+- minor README update (fduncanh@gmail.com)
+- cleanup of the gstreamer audio and video PTS system (fduncanh@gmail.com)
+- update deprecated gstreamer syntax (fduncanh@gmail.com)
+- README  update Changelog for v1.62 (fduncanh@gmail.com)
+- cleanups in X11 UxPlay window  detection, add fpsdisplaysink to list
+  (fduncanh@gmail.com)
+- increase default maxFPS plist setting from 30 to 60 (fduncanh@gmail.com)
+- README: add instruction for avahi service on non-systemd systems
+  (fduncanh@gmail.com)
+- remove unnecessary audio buffer flush on volume change (may cause audio
+  artefacts) This was first introduced in RPiPlay 2019-07-12 in commit https://
+  github.com/FD-/RPiPlay/commit/ad0872961fc34c3b86eae1ba08e6b820f5ff10bc
+  (fduncanh@gmail.com)
+- cleanup: use fprintf to stderr for error exits from option parser
+  (fduncanh@gmail.com)
+- cleanup: remove some printf's (replace by logger) (fduncanh@gmail.com)
+- uxplay 1.62: add audio-only mode time offset option -ao x.y
+  (fduncanh@gmail.com)
+- some more dmap codes (fduncanh@gmail.com)
+- option -ad n to add delay n millisec to ALAC streams (undocumented)
+  (fduncanh@gmail.com)
+- fixes in README (fduncanh@gmail.com)
+- Rearrange and update README with "repology" info. (fduncanh@gmail.com)
+- Windows: UTF-8 on console; fix 0x01 video packets with no payload
+  (fduncanh@gmail.com)
+- uxplay.cpp: cleaner shutdown (fduncanh@gmail.com)
+- lib/CMakeLists.txt: remove -U_FORTIFY_SOURCE from Cflags (fduncanh@gmail.com)
+- UxPlay 1.61 remove -t option and CMakeList.txt fixes; refactor uxplay.cpp
+  (fduncanh@gmail.com)
+
 * Fri Dec 30 2022 laolux <25555671+laolux@users.noreply.github.com> 1.61-1
 - UxPlay 1.61 remove -t option and CMakeList.txt fixes; refactor uxplay.cpp
   (fduncanh@gmail.com)
