@@ -1,7 +1,7 @@
 
 
 Name:    uxplay
-Version: 1.62
+Version: 1.63
 Release: 1%{?dist}
 Summary: UxPlay is an AirPlay server for Linux
 
@@ -45,6 +45,39 @@ UxPlay is an AirPlay server for Linux. It lets you stream the display content of
 %{_mandir}/man1/uxplay.1.gz
 
 %changelog
+* Thu Feb 16 2023 laolux <25555671+laolux@users.noreply.github.com> 1.63-1
+- README fixes (fduncanh@gmail.com)
+- fix timestamp_to_date, etc. for nanosecond timestamps (fduncanh@gmail.com)
+- README updated for 1.63 (fduncanh@gmail.com)
+- introduce -vsync, -async options (fduncanh@gmail.com)
+- add remote_clock_offset to convert remote timestamps to local REALTIME
+  (fduncanh@gmail.com)
+- remove video/audio _start_time and base_time additions (fduncanh@gmail.com)
+- cleaned up raop_rtp.c (fduncanh@gmail.com)
+- add gst_start_time (fduncanh@gmail.com)
+- raop_ntp cleanup parentheses (fduncanh@gmail.com)
+- export both local and remote ntp times with audio and video frames
+  (fduncanh@gmail.com)
+- add pipeline base_time, start_time variables (fduncanh@gmail.com)
+- add change statement: authorship, dates to LGPL v2.1 files
+  (fduncanh@gmail.com)
+- Add modification date, authorship notices to GPLv3 files (fduncanh@gmail.com)
+- improved debug output for timings (fduncanh@gmail.com)
+- add a -sync option to activate server-client sync in audio-only mode
+  (fduncanh@gmail.com)
+- remove unnecessary "audio delay" feature. (fduncanh@gmail.com)
+- cleanups of initial latency code. ntp and rtp times (fduncanh@gmail.com)
+- v1.63: fix audio sync with client video in Audio-only mode
+  (fduncanh@gmail.com)
+- use rtp_clock_rate instead of rtp_sync_scale (fduncanh@gmail.com)
+- convert all times from micro to nano secs (fduncanh@gmail.com)
+- revert use of TIME_MONOTONIC back to TIME_REALTIME (fduncanh@gmail.com)
+- README edits about macPorts build of GStreamer (fduncanh@gmail.com)
+- CMake adjustments for macOS (fduncanh@gmail.com)
+- README update (fduncanh@gmail.com)
+- remove unused memalign.h (fduncanh@gmail.com)
+- remove use of obsolete gettimeofday (fduncanh@gmail.com)
+
 * Mon Jan 23 2023 laolux <25555671+laolux@users.noreply.github.com> 1.62-1
 - Automatic commit of package [uxplay] release [1.61-1].
   (25555671+laolux@users.noreply.github.com)
