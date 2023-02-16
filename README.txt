@@ -5,21 +5,26 @@
 ## Highlights:
 
 -   GPLv3, open source.
+
 -   Originally supported only AirPlay Mirror protocol, now has added
     support for AirPlay Audio-only (Apple Lossless ALAC) streaming from
     current iOS/iPadOS clients. **There is no support for Airplay2
     video-streaming protocol, and none is planned.**
+
 -   macOS computers (2011 or later, both Intel and "Apple Silicon" M1/M2
     systems) can act either as AirPlay clients, or as the server running
     UxPlay. Using AirPlay, UxPlay can emulate a second display for macOS
     clients.
+
 -   Support for older iOS clients (such as 32-bit iPad 2nd gen., iPod
     Touch 5th gen. and iPhone 4S, when upgraded to iOS 9.3.5, or later
     64-bit devices), plus a Windows AirPlay-client emulator, AirMyPC.
+
 -   Uses GStreamer plugins for audio and video rendering (with options
     to select different hardware-appropriate output "videosinks" and
     "audiosinks", and a fully-user-configurable video streaming
     pipeline).
+
 -   Support for server behind a firewall.
 -   Raspberry Pi support **both with and without hardware video
     decoding** by the Broadcom GPU. *Tested on Raspberry Pi 4 Model B
@@ -1066,6 +1071,19 @@ of this (the one used by avahi) is found
 [here](https://github.com/lathiat/avahi/blob/master/avahi-compat-libdns_sd/dns_sd.h).
 A few additional error codes are defined in a later version from
 [Apple](https://opensource.apple.com/source/mDNSResponder/mDNSResponder-544/mDNSShared/dns_sd.h.auto.html).
+
+On Linux, make sure Avahi is installed, and start the avahi-daemon
+service on the system running uxplay (your distribution will document
+how to do this, for example:
+`sudo systemctl [enable,disable,start,stop,status] avahi-daemon`). You
+might need to edit the avahi-daemon.conf file (it is typically in
+/etc/avahi/, find it with "`sudo find /etc -name avahi-daemon.conf`"):
+make sure that "disable-publishing" is **not** a selected option). Some
+systems may instead use the mdnsd daemon as an alternative to provide
+DNS-SD service. *(FreeBSD offers both alternatives, but only Avahi was
+tested: one of the steps needed for getting Avahi running on a FreeBSD
+system is to edit `/usr/local/etc/avahi/avahi-daemon.conf` to uncomment
+a line for airplay support.*)
 
 If UxPlay stalls *without an error message* and *without the server name
 showing on the client*, this is either pre-UxPlay-1.60 behavior when no

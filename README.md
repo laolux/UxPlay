@@ -329,6 +329,9 @@ are opened: **if a firewall is active, also open UDP port 5353 (for mDNS queries
 needed by Avahi**. See [Troubleshooting](#troubleshooting) below for
 help with this or other problems.
 
+* you may find video is improved by the setting -fps 60 that allows some video to be played at 60 frames
+per second. (You can see what framerate is actually streaming by using -vs fpsdisplaysink, and/or -FPSdata.)
+
 * By default, UxPlay is locked to
 its current client until that client drops the connection; since UxPlay-1.58, the option `-nohold` modifies this
 behavior so that when a new client requests a connection, it removes the current client and takes over.
@@ -442,6 +445,8 @@ patch from the UxPlay Wiki has been applied.)
   Sound and video will play on the remote host; "nohup" will keep uxplay running if the ssh session is
   closed.  Terminal output is saved to FILE (which can be /dev/null to discard it)
 
+
+
 ## Building UxPlay on macOS:  **(Intel X86_64 and "Apple Silicon" M1/M2 Macs)**
 
 _Note: A native AirPlay Server feature is included in  macOS 12 Monterey, but is restricted to recent hardware.
@@ -465,6 +470,8 @@ used in the macOS builds, so they can be uninstalled after building uxplay, if y
 Otherwise, build libplist and openssl from source: see instructions near the  end of this README;
 requires development tools (autoconf, automake, libtool, _etc._) to be installed.
 
+* You could instead compile the "official" GStreamer release from source: GStreamer-1.22.0 has been successfully
+built this way on a system using MacPorts: see [the UxPlay Wiki](https://github.com/FDH2/UxPlay/wiki/Building-GStreamer-from-Source-on-macOS-with-MacPorts)
 
 Next get the latest macOS release of GStreamer-1.0.
 
@@ -837,6 +844,7 @@ Some  systems  may instead use the mdnsd daemon as an alternative to provide DNS
 * **uxplay starts, but either stalls or stops after "Initialized server socket(s)" appears (_without the server name showing on the client_)**.
 
 If UxPlay stops with the "No DNS-SD Server found" message, this  means that your network **does not have a running Bonjour/zeroconf DNS-SD server.**
+
 Before v1.60, UxPlay used to stall silently if DNS-SD service registration failed, but now stops with an error message returned by the
 DNSServiceRegister function: kDNSServiceErr_Unknown if no DNS-SD server was found:
 other mDNS error codes are in the range FFFE FF00 (-65792) to FFFE FFFF (-65537), and are listed in the
@@ -844,6 +852,15 @@ dnssd.h file.  An older version of this (the one used by avahi) is found [here](
 A few additional error codes are defined in a later version
 from [Apple](https://opensource.apple.com/source/mDNSResponder/mDNSResponder-544/mDNSShared/dns_sd.h.auto.html).   
 
+On Linux, make sure Avahi is installed,
+and start the avahi-daemon service on the system running uxplay (your distribution will document how to do this, for example:
+`sudo systemctl [enable,disable,start,stop,status] avahi-daemon`).
+You might need to edit the avahi-daemon.conf file (it is typically in /etc/avahi/, find it with "`sudo find /etc -name avahi-daemon.conf`"):
+make sure that "disable-publishing" is **not** a selected option).
+Some  systems  may instead use the mdnsd daemon as an alternative to provide DNS-SD service.
+_(FreeBSD offers both alternatives, but only Avahi was tested: one of the steps needed for
+getting Avahi running on a FreeBSD system is to edit ```/usr/local/etc/avahi/avahi-daemon.conf```  to
+uncomment a line for airplay support._)
 
 If UxPlay stalls _without an error message_ and _without the server name showing on the client_, this is either pre-UxPlay-1.60
 behavior when no DNS-SD server was found, or a network problem.
@@ -911,6 +928,7 @@ been patched (see the UxPlay [Wiki](https://github.com/FDH2/UxPlay/wiki/Gstreame
 This is fixed in  GStreamer-1.22, and by backport patches from this in distributions such as Raspberry Pi OS (Bullseye): **use option `-bt709`
 with the GStreamer-1.18.4 from Raspberry Pi OS**.
 This also needs the bcm2835-codec kernel module that is not in the standard Linux kernel (it is available in Raspberry Pi OS, Ubuntu and Manjaro).
+**If you do not have this kernel module, or GStreamer < 1.22 is not patched, use options `-avdec -vsync` for software h264-decoding.**
 
 * **If this kernel module is not available in your Raspberry Pi operating system, or if GStreamer < 1.22 is not patched, use option `-avdec`
 for software h264-decoding.**

@@ -388,6 +388,10 @@ mDNS queries) needed by Avahi</strong>. See <a
 href="#troubleshooting">Troubleshooting</a> below for help with this or
 other problems.</p>
 <ul>
+<li><p>you may find video is improved by the setting -fps 60 that allows
+some video to be played at 60 frames per second. (You can see what
+framerate is actually streaming by using -vs fpsdisplaysink, and/or
+-FPSdata.)</p></li>
 <li><p>By default, UxPlay is locked to its current client until that
 client drops the connection; since UxPlay-1.58, the option
 <code>-nohold</code> modifies this behavior so that when a new client
@@ -1033,6 +1037,20 @@ An older version of this (the one used by avahi) is found <a
 href="https://github.com/lathiat/avahi/blob/master/avahi-compat-libdns_sd/dns_sd.h">here</a>.
 A few additional error codes are defined in a later version from <a
 href="https://opensource.apple.com/source/mDNSResponder/mDNSResponder-544/mDNSShared/dns_sd.h.auto.html">Apple</a>.</p>
+<p>On Linux, make sure Avahi is installed, and start the avahi-daemon
+service on the system running uxplay (your distribution will document
+how to do this, for example:
+<code>sudo systemctl [enable,disable,start,stop,status] avahi-daemon</code>).
+You might need to edit the avahi-daemon.conf file (it is typically in
+/etc/avahi/, find it with
+“<code>sudo find /etc -name avahi-daemon.conf</code>”): make sure that
+“disable-publishing” is <strong>not</strong> a selected option). Some
+systems may instead use the mdnsd daemon as an alternative to provide
+DNS-SD service. <em>(FreeBSD offers both alternatives, but only Avahi
+was tested: one of the steps needed for getting Avahi running on a
+FreeBSD system is to edit
+<code>/usr/local/etc/avahi/avahi-daemon.conf</code> to uncomment a line
+for airplay support.</em>)</p>
 <p>If UxPlay stalls <em>without an error message</em> and <em>without
 the server name showing on the client</em>, this is either
 pre-UxPlay-1.60 behavior when no DNS-SD server was found, or a network
