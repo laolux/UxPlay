@@ -295,10 +295,12 @@ Linux and *BSD</h3>
 Linux or Alma Linux):</strong> (sudo dnf instal, or sudo yum install)
 openssl-devel libplist-devel avahi-compat-libdns_sd-devel (some from the
 “CodeReady” add-on repository, called “PowerTools” by clones)
-(+libX11-devel for fullscreen X11 and “ZOOMFIX” if needed).</p></li>
+gstreamer1-devel gstreamer1-plugins-base-devel (+libX11-devel for
+fullscreen X11 and “ZOOMFIX” if needed).</p></li>
 <li><p><strong>OpenSUSE:</strong> (sudo zypper install) libopenssl-devel
-libplist-devel avahi-compat-mDNSResponder-devel (+ libX11-devel for
-fullscreen X11, and ZOOMFIX if needed).</p></li>
+libplist-devel avahi-compat-mDNSResponder-devel gstreamer-devel
+gstreamer-plugins-base-devel (+ libX11-devel for fullscreen X11, and
+ZOOMFIX if needed).</p></li>
 <li><p><strong>Arch Linux</strong> (<em>Also available as a package in
 AUR</em>): (sudo pacman -Syu) openssl libplist avahi
 gst-plugins-base.</p></li>
@@ -336,21 +338,18 @@ plugins (Non-Debian-based Linux or *BSD)</h3>
 <ul>
 <li><p><strong>Red Hat, or clones like CentOS (now continued as Rocky
 Linux or Alma Linux):</strong> (sudo dnf install, or sudo yum install)
-The required GStreamer packages are: gstreamer1-devel
-gstreamer1-plugins-base-devel gstreamer1-libav
-gstreamer1-plugins-bad-free (+ gstreamer1-vaapi for intel graphics); you
-may need to get some of them (in particular gstreamer1-libav) from <a
-href="https://rpmfusion.org">rpmfusion.org</a> (which provides packages
-including plugins that RedHat does not ship for license reasons).
-<em>[In recent <strong>Fedora</strong>, the libav plugin package is
-renamed to “gstreamer1-plugin-libav”, which now needs the RPM Fusion
-package ffmpeg-libs for the patent-encumbered code which RedHat does not
-provide: check with “<code>rpm -qi ffmpeg-libs</code>” that it lists
-“Packager” as RPM Fusion; if this is not installed, uxplay will fail to
-start, with error: <strong>no element “avdec_aac”</strong>
+gstreamer1-libav gstreamer1-plugins-bad-free (+ gstreamer1-vaapi for
+intel graphics); you may need to get some of them (in particular
+gstreamer1-libav) from <a href="https://rpmfusion.org">rpmfusion.org</a>
+(which provides packages including plugins that RedHat does not ship for
+license reasons). <em>[In recent <strong>Fedora</strong>, the libav
+plugin package is renamed to “gstreamer1-plugin-libav”, which now needs
+the RPM Fusion package ffmpeg-libs for the patent-encumbered code which
+RedHat does not provide: check with “<code>rpm -qi ffmpeg-libs</code>”
+that it lists “Packager” as RPM Fusion; if this is not installed, uxplay
+will fail to start, with error: <strong>no element “avdec_aac”</strong>
 ]</em>.</p></li>
-<li><p><strong>OpenSUSE:</strong> (sudo zypper install) The required
-GStreamer packages are: gstreamer-devel gstreamer-plugins-base-devel
+<li><p><strong>OpenSUSE:</strong> (sudo zypper install)
 gstreamer-plugins-libav gstreamer-plugins-bad (+ gstreamer-plugins-vaapi
 for Intel graphics); in some cases, you may need to use gstreamer or
 libav* packages for OpenSUSE from <a
@@ -955,8 +954,9 @@ listening when UxPlay started.</p>
 <code>avahi-browse -a -t</code> in a different terminal window on the
 server to verify that the UxPlay AirTunes and AirPlay services are
 correctly registered (only the AirTunes service is used in the “Legacy”
-AirPlay Mirror mode used by UxPlay, bit the AirPlay service is used for
-the initial contact).</p>
+AirPlay Mirror mode used by UxPlay, but the AirPlay service is used for
+the initial contact). <strong>You may need to install avahi-utils (or
+some package with a similar name) to get avahi-browse</strong>.</p>
 <p>The results returned by avahi-browse should show entries for uxplay
 like</p>
 <pre><code>+   eno1 IPv6 UxPlay                                        AirPlay Remote Video local

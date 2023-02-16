@@ -241,12 +241,13 @@ the GStreamer plugins must already be installed)
 
 * **Red Hat, or clones like CentOS (now continued as Rocky Linux or Alma Linux):** 
 (sudo dnf instal, or sudo yum install) openssl-devel libplist-devel avahi-compat-libdns_sd-devel (some
-from the "CodeReady" add-on repository, called "PowerTools" by clones)
-(+libX11-devel for fullscreen X11 and "ZOOMFIX" if needed). 
+from the "CodeReady" add-on repository, called "PowerTools" by clones) gstreamer1-devel 
+gstreamer1-plugins-base-devel (+libX11-devel for fullscreen X11 and "ZOOMFIX" if needed). 
 
  * **OpenSUSE:**
 (sudo zypper install) libopenssl-devel libplist-devel
-avahi-compat-mDNSResponder-devel (+ libX11-devel for fullscreen X11, and ZOOMFIX if needed). 
+avahi-compat-mDNSResponder-devel gstreamer-devel 
+gstreamer-plugins-base-devel (+ libX11-devel for fullscreen X11, and ZOOMFIX if needed). 
 
 * **Arch Linux** (_Also available as a package in AUR_):
 (sudo pacman -Syu) openssl libplist avahi  gst-plugins-base. 
@@ -281,8 +282,7 @@ or "**pipewire**" plugins may need to be installed, depending on how your audio 
 ### Installing plugins (Non-Debian-based Linux or \*BSD)
 
 * **Red Hat, or clones like CentOS (now continued as Rocky Linux or Alma Linux):** 
-(sudo dnf install, or sudo yum install) The required GStreamer packages are:
-gstreamer1-devel gstreamer1-plugins-base-devel gstreamer1-libav gstreamer1-plugins-bad-free (+ gstreamer1-vaapi
+(sudo dnf install, or sudo yum install) gstreamer1-libav gstreamer1-plugins-bad-free (+ gstreamer1-vaapi
 for intel graphics);
 you may need to get some of them (in particular gstreamer1-libav) from [rpmfusion.org](https://rpmfusion.org)
 (which provides packages including plugins that RedHat does not ship for license reasons).
@@ -294,8 +294,7 @@ error: **no element "avdec_aac"** ]_.
 
  * **OpenSUSE:**
 (sudo zypper install)
-The required GStreamer packages are: gstreamer-devel
-gstreamer-plugins-base-devel gstreamer-plugins-libav gstreamer-plugins-bad (+ gstreamer-plugins-vaapi
+gstreamer-plugins-libav gstreamer-plugins-bad (+ gstreamer-plugins-vaapi
 for Intel graphics); in some cases,  you may need to use gstreamer or libav* packages for OpenSUSE
 from [Packman](https://ftp.gwdg.de/pub/linux/misc/packman/suse/) "Essentials"
 (which provides packages including plugins that OpenSUSE does not ship for license reasons).
@@ -798,7 +797,9 @@ listening when UxPlay started.
 
 To check this, after starting uxplay, use the utility ``avahi-browse -a -t`` in a different terminal window on the server to
 verify that the UxPlay AirTunes and AirPlay services are correctly registered (only the AirTunes service is
-used in the "Legacy" AirPlay Mirror mode  used by UxPlay, bit the AirPlay service is used for the initial contact).
+used in the "Legacy" AirPlay Mirror mode  used by UxPlay, but the AirPlay service is used for the initial contact). **You may need to
+install avahi-utils (or some package with a similar name) to get avahi-browse**.
+
 
 The results returned by avahi-browse should show entries for
 uxplay like
