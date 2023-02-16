@@ -1,6 +1,9 @@
 /**
  * RPiPlay - An open-source AirPlay mirroring server for Raspberry Pi
  * Copyright (C) 2019 Florian Draschbacher
+ * Modified for:
+ * UxPlay - An open-source AirPlay mirroring server
+ * Copyright (C) 2021-23 F. Duncanh
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +24,22 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
 #include "audio_renderer.h"
+#define SECOND_IN_NSECS 1000000000UL
+
+#define NFORMATS 2     /* set to 4 to enable AAC_LD and PCM:  allowed, but  never seen in real-world use */
+
+static GstClockTime gst_audio_pipeline_base_time = GST_CLOCK_TIME_NONE;
+static logger_t *logger = NULL;
+const char * format[NFORMATS];
+
+typedef struct audio_renderer_s {
+    GstElement *appsrc; 
+    GstElement *pipeline;
+    GstElement *volume;
+    unsigned char ct;
+} audio_renderer_t ;
+static audio_renderer_t *renderer_type[NFORMATS];
+static audio_renderer_t *renderer = NULL;
 
 /* GStreamer Caps strings for Airplay-defined audio compression types (ct) */
 
@@ -36,14 +55,6 @@ static const char aac_lc_caps[] ="audio/mpeg,mpegversion=(int)4,channnels=(int)2
 
 /* ct = 8; codec_data from MPEG v4 ISO 14996-3 Section 1.6.2.1: AAC_ELD 44100/2  spf = 480 */
 static const char aac_eld_caps[] ="audio/mpeg,mpegversion=(int)4,channnels=(int)2,rate=(int)44100,stream-format=raw,codec_data=(buffer)f8e85000";
-
-typedef struct audio_renderer_s {
-    GstElement *appsrc; 
-    GstElement *pipeline;
-    GstElement *volume;
-    unsigned char ct;
-} audio_renderer_t ;
-
 
 static gboolean check_plugins (void)
 {
@@ -69,42 +80,16 @@ static gboolean check_plugins (void)
     return ret;
 }
 
-bool gstreamer_init(uint64_t *unix_start_time, uint64_t *monotonic_start_time){
-    struct timespec tp;
-    GstClock *clock = NULL;
-    GstClockTime time;
-    
+bool gstreamer_init(){
     gst_init(NULL,NULL);    
-    clock = gst_system_clock_obtain();
-    if (!clock) {
-        g_print("gstreamer_init:  error: failed to obtain gst_system_clock\n");
-        return false;
-    }
-    g_object_set(clock, "clock-type", GST_CLOCK_TYPE_MONOTONIC, NULL);
-    time = GST_TIME_AS_NSECONDS(gst_clock_get_time(clock));
-    if (clock_gettime(CLOCK_REALTIME, &tp)){
-        g_print("gstreamer_init: error failed to get unix time\n");
-        return false;
-    }
-    time += GST_TIME_AS_NSECONDS(gst_clock_get_time(clock));
-    *monotonic_start_time = time/2;   
-    *unix_start_time = (1000000000 * tp.tv_sec) + tp.tv_nsec;
-    g_object_unref (clock);
     return (bool) check_plugins ();
 }
 
-#define NFORMATS 2     /* set to 4 to enable AAC_LD and PCM:  allowed, but  never seen in real-world use */
-static audio_renderer_t *renderer_type[NFORMATS];
-static audio_renderer_t *renderer = NULL;
-static GstClockTime gst_audio_pipeline_base_time = GST_CLOCK_TIME_NONE;
-static logger_t *logger = NULL;
-const char * format[NFORMATS];
-
-void audio_renderer_init(logger_t *render_logger, const char* audiosink, const char* audio_delay) {
+void audio_renderer_init(logger_t *render_logger, const char* audiosink, const bool* audio_sync, const bool* video_sync) {
     GError *error = NULL;
     GstCaps *caps = NULL;
     GstClock *clock = gst_system_clock_obtain();
-    g_object_set(clock, "clock-type", GST_CLOCK_TYPE_MONOTONIC, NULL);
+    g_object_set(clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
 
     logger = render_logger;
 
@@ -119,11 +104,6 @@ void audio_renderer_init(logger_t *render_logger, const char* audiosink, const c
             g_string_append(launch, "! avdec_aac ! ");
             break;
         case 1:    /* ALAC */
-            if (audio_delay[0]) {
-                g_string_append(launch, "min-threshold-time=");
-                g_string_append(launch, audio_delay);
-                g_string_append(launch, "000000 ");
-            }
             g_string_append(launch, "! avdec_alac ! ");
             break;
         case 3:   /*PCM*/
@@ -135,7 +115,22 @@ void audio_renderer_init(logger_t *render_logger, const char* audiosink, const c
         g_string_append (launch, "audioresample ! ");    /* wasapisink must resample from 44.1 kHz to 48 kHz */
         g_string_append (launch, "volume name=volume ! level ! ");
         g_string_append (launch, audiosink);
-        g_string_append (launch, " sync=false");
+        switch(i) {
+        case 1:  /*ALAC*/
+	    if (*audio_sync) {
+                g_string_append (launch, " sync=true");
+	    } else {
+                g_string_append (launch, " sync=false");
+	    }
+            break;
+        default:
+	    if (*video_sync) {
+                g_string_append (launch, " sync=true");
+	    } else {
+                g_string_append (launch, " sync=false");
+	    }
+            break;
+        }
         renderer_type[i]->pipeline  = gst_parse_launch(launch->str, &error);
 	if (error) {
           g_error ("gst_parse_launch error (audio %d):\n %s\n", i+1, error->message);
@@ -214,17 +209,18 @@ void  audio_renderer_start(unsigned char *ct) {
     } else {
         logger_log(logger, LOGGER_ERR, "unknown audio compression type ct = %d", *ct);
     }
-    
 }
 
-void audio_renderer_render_buffer(unsigned char* data, int *data_len, unsigned short *seqnum, uint64_t *pts_raw) {
+void audio_renderer_render_buffer(unsigned char* data, int *data_len, unsigned short *seqnum, uint64_t *ntp_time) {
     GstBuffer *buffer;
     bool valid;
-    GstClockTime pts = (GstClockTime) *pts_raw;
+    GstClockTime pts = (GstClockTime) *ntp_time ;    /* now in nsecs */
+    //GstClockTimeDiff latency = GST_CLOCK_DIFF(gst_element_get_current_clock_time (renderer->appsrc), pts);
     if (pts >= gst_audio_pipeline_base_time) {
         pts -= gst_audio_pipeline_base_time;
     } else {
-        logger_log(logger, LOGGER_ERR, "*** invalid *pts_raw < gst_audio_pipeline_base_time");
+        logger_log(logger, LOGGER_ERR, "*** invalid ntp_time < gst_audio_pipeline_base_time\n%8.6f ntp_time\n%8.6f base_time",
+                   ((double) *ntp_time) / SECOND_IN_NSECS, ((double) gst_audio_pipeline_base_time) / SECOND_IN_NSECS);
         return;
     }
     if (data_len == 0 || renderer == NULL) return;
@@ -238,6 +234,7 @@ void audio_renderer_render_buffer(unsigned char* data, int *data_len, unsigned s
     
     buffer = gst_buffer_new_allocate(NULL, *data_len, NULL);
     g_assert(buffer != NULL);
+    //g_print("audio latency %8.6f\n", (double) latency / SECOND_IN_NSECS);
     GST_BUFFER_PTS(buffer) = pts;
     gst_buffer_fill(buffer, 0, data, *data_len);
     switch (renderer->ct){
@@ -297,4 +294,3 @@ void audio_renderer_destroy() {
         free(renderer_type[i]);
     }
 }
-

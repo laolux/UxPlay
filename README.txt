@@ -1,4 +1,4 @@
-# UxPlay 1.62: AirPlay-Mirror and AirPlay-Audio server for Linux, macOS, and Unix (now also runs on Windows).
+# UxPlay 1.63: AirPlay-Mirror and AirPlay-Audio server for Linux, macOS, and Unix (now also runs on Windows).
 
 ### Now developed at the GitHub site <https://github.com/FDH2/UxPlay> (where all user issues should be posted).
 
@@ -33,7 +33,9 @@
     (omx). See [success
     reports](https://github.com/FDH2/UxPlay/wiki/UxPlay-on-Raspberry-Pi:-success-reports:),
     so far limited to distributions available through Raspberry-Pi
-    Imager.
+    Imager. **NEW!** *The new-in-UxPlay-1.63 option `-vsync` now makes
+    UxPlay viable on other distributions for Raspberry Pi that do not
+    include kernel support for hardware decoding!*
 
 -   **New**: Support for running on Microsoft Windows (builds with the
     MinGW-64 compiler in the unix-like MSYS2 environment).
@@ -45,7 +47,8 @@ status](https://repology.org/badge/vertical-allrepos/uxplay.svg)](https://repolo
 
 -   Install uxplay on Debian-based Linux systems with
     "`sudo apt install uxplay`"; on FreeBSD with
-    "`sudo pkg install uxplay`".
+    "`sudo pkg install uxplay`". Also available on Arch-based systems
+    through AUR.
 
 -   On Linux and \*BSD the mDNS/DNS-SD (Bonjour/ZeroConf) local network
     services needed by UxPlay are usually provided by Avahi: **if there
@@ -54,6 +57,8 @@ status](https://repology.org/badge/vertical-allrepos/uxplay.svg)](https://repolo
     can work without this port by using only the host's loopback
     interface, but its visibility to clients will be degraded.) See the
     [Troubleshooting](#troubleshooting) section below for more details.
+    (With a firewall, you also need to open ports for UxPlay, and use
+    the `-p <n>` option; see `man uxplay` or `uxplay -h`.)
 
 -   Even if you install your distribution's pre-compiled uxplay binary
     package, you may need to read the instructions below for [running
@@ -62,7 +67,7 @@ status](https://repology.org/badge/vertical-allrepos/uxplay.svg)](https://repolo
 
 -   For Raspberry Pi (tested on RPi 4 model B, reported to work on RPi 3
     model B+), only Raspberry Pi OS, plus the Debian and Manjaro
-    ARM-RPi4 Images made available through the Raspberry Pi Imager, are
+    ARM-RPi4 images made available through the Raspberry Pi Imager, are
     known to provide the (out-of-mainline-kernel) kernel-module
     **bcm2835-codec.ko** [maintained by Raspberry
     Pi](https://github.com/raspberrypi/linux/tree/rpi-5.15.y/drivers/staging/vc04_services),
@@ -72,8 +77,8 @@ status](https://repology.org/badge/vertical-allrepos/uxplay.svg)](https://repolo
     [patch](https://github.com/FDH2/UxPlay/wiki/Gstreamer-Video4Linux2-plugin-patches)
     forGStreamer \< 1.22.
 
--   To (easily) compile UxPlay from source, see the section [Getting
-    UxPlay](#getting-uxplay).
+-   To (easily) compile the latest UxPlay from source, see the section
+    [Getting UxPlay](#getting-uxplay).
 
 # Detailed description of UxPlay
 
@@ -176,24 +181,22 @@ used.
     be built by the user: See [these
     instructions](https://github.com/FDH2/UxPlay/wiki/NVIDIA-nvdec-and-nvenc-plugins).
 
--   **Video4Linux2 support for the Raspberry Pi Broadcom GPU**
+-   **Video4Linux2 support for the Raspberry Pi Broadcom 2835 GPU**
 
-    Raspberry Pi (RPi) computers can run UxPlay with software decoding
-    of h264 video but this usually has unacceptable latency, and
-    hardware-accelerated GPU decoding should be used. UxPlay accesses
-    the GPU using the GStreamer plugin for Video4Linux2 (v4l2), which
-    replaces unmaintained 32-bit-only OpenMax used by RPiPlay. Fixes to
-    the v4l2 plugin that allow it to work with UxPlay on RPi are now in
-    the GStreamer development branch, and will appear in the upcoming
-    GStreamer-1.22 release. A backport (package
-    `gstreamer1.0-plugins-good-1.18.4-2+deb11u1+rpt1`) has already
-    appeared in RPi OS (Bullseye); for it to work with uxplay 1.56 or
-    later, you may need to use the `-bt709` option. For other
-    distributions without the backport, you can find [patching
-    instructions for
-    GStreamer](https://github.com/FDH2/UxPlay/wiki/Gstreamer-Video4Linux2-plugin-patches)
-    in the [UxPlay Wiki](https://github.com/FDH2/UxPlay/wiki) for
-    GStreamer 1.18.4 and later.
+    Raspberry Pi (RPi) computers (tested on Pi 4 Model B) can now run
+    UxPlay using software decoding of h264 video, but
+    hardware-accelerated decoding by firmware in the Pi's GPU is
+    prefered. UxPlay accesses the GPU using the GStreamer-1.22
+    Video4Linux2 (v4l2) plugin; the plugin from older GStreamer needs a
+    patch to backport fixes from v1.22: this has been done in the
+    v1.18.4 version supplied by Raspberry Pi OS (Bullseye), and patches
+    for this and later 1.20 versions are available in the UxPlay Wiki
+    (see [patching instructions for
+    GStreamer](https://github.com/FDH2/UxPlay/wiki/Gstreamer-Video4Linux2-plugin-patches)).
+    Also required is the out-of-mainline Linux kernel module
+    bcm2835-v4l2-codec maintained by Raspberry Pi, so far only included
+    in Raspberry Pi OS, and two other distributions (Ubuntu, Manjaro)
+    available with Raspberry Pi Imager.
 
 ### Note to packagers:
 
@@ -294,11 +297,13 @@ installed)
     Alma Linux):** (sudo dnf instal, or sudo yum install) openssl-devel
     libplist-devel avahi-compat-libdns_sd-devel (some from the
     "CodeReady" add-on repository, called "PowerTools" by clones)
-    (+libX11-devel for fullscreen X11 and "ZOOMFIX" if needed).
+    gstreamer1-devel gstreamer1-plugins-base-devel (+libX11-devel for
+    fullscreen X11 and "ZOOMFIX" if needed).
 
 -   **OpenSUSE:** (sudo zypper install) libopenssl-devel libplist-devel
-    avahi-compat-mDNSResponder-devel (+ libX11-devel for fullscreen X11,
-    and ZOOMFIX if needed).
+    avahi-compat-mDNSResponder-devel gstreamer-devel
+    gstreamer-plugins-base-devel (+ libX11-devel for fullscreen X11, and
+    ZOOMFIX if needed).
 
 -   **Arch Linux** (*Also available as a package in AUR*): (sudo pacman
     -Syu) openssl libplist avahi gst-plugins-base.
@@ -333,25 +338,22 @@ need to be installed, depending on how your audio is set up.
 ### Installing plugins (Non-Debian-based Linux or \*BSD)
 
 -   **Red Hat, or clones like CentOS (now continued as Rocky Linux or
-    Alma Linux):** (sudo dnf install, or sudo yum install) The required
-    GStreamer packages are: gstreamer1-devel
-    gstreamer1-plugins-base-devel gstreamer1-libav
-    gstreamer1-plugins-bad-free (+ gstreamer1-vaapi for intel graphics);
-    you may need to get some of them (in particular gstreamer1-libav)
-    from [rpmfusion.org](https://rpmfusion.org) (which provides packages
-    including plugins that RedHat does not ship for license reasons).
-    *\[In recent **Fedora**, the libav plugin package is renamed to
-    "gstreamer1-plugin-libav", which now needs the RPM Fusion package
-    ffmpeg-libs for the patent-encumbered code which RedHat does not
-    provide: check with "`rpm -qi ffmpeg-libs`" that it lists "Packager"
-    as RPM Fusion; if this is not installed, uxplay will fail to start,
-    with error: **no element "avdec_aac"** \]*.
+    Alma Linux):** (sudo dnf install, or sudo yum install)
+    gstreamer1-libav gstreamer1-plugins-bad-free (+ gstreamer1-vaapi for
+    intel graphics); you may need to get some of them (in particular
+    gstreamer1-libav) from [rpmfusion.org](https://rpmfusion.org) (which
+    provides packages including plugins that RedHat does not ship for
+    license reasons). *\[In recent **Fedora**, the libav plugin package
+    is renamed to "gstreamer1-plugin-libav", which now needs the RPM
+    Fusion package ffmpeg-libs for the patent-encumbered code which
+    RedHat does not provide: check with "`rpm -qi ffmpeg-libs`" that it
+    lists "Packager" as RPM Fusion; if this is not installed, uxplay
+    will fail to start, with error: **no element "avdec_aac"** \]*.
 
--   **OpenSUSE:** (sudo zypper install) The required GStreamer packages
-    are: gstreamer-devel gstreamer-plugins-base-devel
-    gstreamer-plugins-libav gstreamer-plugins-bad (+
-    gstreamer-plugins-vaapi for Intel graphics); in some cases, you may
-    need to use gstreamer or libav\* packages for OpenSUSE from
+-   **OpenSUSE:** (sudo zypper install) gstreamer-plugins-libav
+    gstreamer-plugins-bad (+ gstreamer-plugins-vaapi for Intel
+    graphics); in some cases, you may need to use gstreamer or libav\*
+    packages for OpenSUSE from
     [Packman](https://ftp.gwdg.de/pub/linux/misc/packman/suse/)
     "Essentials" (which provides packages including plugins that
     OpenSUSE does not ship for license reasons).
@@ -390,27 +392,32 @@ for help with this or other problems.
     -FPSdata.)
 
 -   By default, UxPlay is locked to its current client until that client
-    drops the connection; the option `-nohold` modifies this behavior so
-    that when a new client requests a connection, it removes the current
-    client and takes over.
+    drops the connection; since UxPlay-1.58, the option `-nohold`
+    modifies this behavior so that when a new client requests a
+    connection, it removes the current client and takes over.
 
--   To display the accompanying "Cover Art" from sources like Apple
-    Music in Audio-Only (ALAC) mode, run "`uxplay -ca <name> &`" in the
-    background, then run a image viewer with an autoreload feature: an
-    example is "feh": run "`feh -R 1 <name>`" in the foreground;
-    terminate feh and then Uxplay with "`ctrl-C fg ctrl-C`".
+-   In its default mode, Uxplay uses a simple GStreamer mode
+    ("sync=false") that streams without using audio- and
+    video-timestamps for synchronization. UxPlay 1.63 also introduces
+    `-vsync` and `-async` as alternatives that use timestamps in Mirror
+    and Audio-Only modes respectively (GStreamer's "sync=true" mode).
+    (These options also allow an optional positive (or negative)
+    audio-delay in milliseconds for fine-tuning : `-vsync 20.5` delays
+    audio relative to video by 0.0205 secs; a negative value advances
+    it.) Use `-async` to synchronise video on the iOS client with ALAC
+    Audio-Only mode audio streamer to the server, for example when
+    watching Apple Music song lyrics on the client. Use `-vsync` in
+    Mirror mode on low-powered system such Raspberry Pi when using
+    `-avdec` software h264 video decoding. Simple streaming seems to
+    maintain synchronisation of audio with video on desktop systems, but
+    you may wish to experiment with `-vsync` there too.
 
--   If you wish to listen in Audio-Only mode on the server while
-    watching the client screen (for video or Apple Music song lyrics,
-    etc.), the video on the client is delayed by about 5 seconds behind
-    the the audio on the server. This can be corrected with the **audio
-    offset** option `-ao x` with an *x* of about 5.0 (allowed values of
-    *x* are decimal numbers between 0 and 10.0 seconds); this workaround
-    just delays playing of audio on the server by *x* seconds, so the
-    effect of pausing or changing tracks on the client will
-    unfortunately also be delayed. *(The reason for the 5 sec. video
-    delay on the client may be because, while streaming in Legacy mode,
-    the client does not get latency information from the server.)*
+-   Since UxPlay-1.54, you can display the accompanying "Cover Art" from
+    sources like Apple Music in Audio-Only (ALAC) mode: run
+    "`uxplay -ca <name> &`" in the background, then run a image viewer
+    with an autoreload feature: an example is "feh": run
+    "`feh -R 1 <name>`" in the foreground; terminate feh and then Uxplay
+    with "`ctrl-C fg ctrl-C`".
 
 **One common problem involves GStreamer attempting to use
 incorrectly-configured or absent accelerated hardware h264 video
@@ -423,11 +430,16 @@ options.
 
 ### **Special instructions for Raspberry Pi (only tested on model 4B)**:
 
--   For good performance, the Raspberry Pi needs the GStreamer
+-   If you use the software-only (h264) video-decoding UxPlay option
+    `-avdec`, you also need option `-vsync` to keep audio and video
+    synchronized (`-vsync` is a new feature; before it was introduced,
+    software decoding on the Pi was not viable.)
+
+-   For best performance, the Raspberry Pi needs the GStreamer
     Video4linux2 plugin to use its Broadcom GPU hardware for decoding
-    h264 video. The plugin accesses the GPU using the bcm2835_codec
-    kernel module which is maintained by Raspberry Pi in the
-    drivers/staging/VC04_services part of the [Raspberry Pi kernel
+    h264 video. This needs the bcm2835_codec kernel module which is
+    maintained by Raspberry Pi in the drivers/staging/VC04_services part
+    of the [Raspberry Pi kernel
     tree](https://github.com/raspberrypi/linux), but is not yet included
     in the mainline Linux kernel. Distributions for R Pi that supply it
     include Raspberry Pi OS, Ubuntu, and Manjaro. Some others may not.
@@ -500,7 +512,7 @@ with package managers [MacPorts](http://www.macports.org),
 [Fink](http://finkproject.org) or [Homebrew](http://brew.sh), or by a
 download from <https://cmake.org/download/>.
 
-First install OpenSSL and libplist: static versions of these libaries
+First install OpenSSL and libplist: static versions of these libraries
 will be used, so they can be uninstalled after UxPlay is built. These
 are available in MacPorts and Homebrew, or they can easily be built from
 source (see instructions at the end of this README; this requires
@@ -511,17 +523,23 @@ Next get the latest macOS release of GStreamer-1.0.
 
 -   recommended: install the "official" GStreamer release for macOS from
     <https://gstreamer.freedesktop.org/download/>. The alternative is to
-    install it from Homebrew (MacPorts also supplies it, but compiled to
-    use X11).
+    install it from Homebrew. MacPorts packages of GStreamer are
+    compiled to use X11 and are **NOT** recommended.
+
+-   You could instead compile the "official" GStreamer release from
+    source: GStreamer-1.22.0 has been successfully built this way on a
+    system using MacPorts: see [the UxPlay
+    Wiki](https://github.com/FDH2/UxPlay/wiki/Building-GStreamer-from-Source-on-macOS-with-MacPorts)
 
 **For the "official" release**: install both the macOS runtime and
 development installer packages. Assuming that the latest release is
-1.20.5. install `gstreamer-1.0-1.20.5-universal.pkg` and
-`gstreamer-1.0-devel-1.20.5-universal.pkg`. (If you have an
-Intel-architecture Mac, and have problems with the "universal" packages,
-you can also use `gstreamer-1.0-1.18.6-x86_64.pkg` and
-`gstreamer-1.0-devel-1.18.6-x86_64.pkg`.) Click on them to install (they
-install to /Library/FrameWorks/GStreamer.framework).
+1.20.5 install `gstreamer-1.0-1.20.5-universal.pkg` and
+`gstreamer-1.0-devel-1.20.5-universal.pkg`. Click on them to install
+(they install to /Library/FrameWorks/GStreamer.framework).
+
+-   **ADDED 2023-01-25: v1.22.0 has just been released, but these
+    binaries seem to have problems, perhaps only on older macOS
+    releases; use v1.20.5 if they dont work for you.**
 
 **For Homebrew**: pkgconfig is needed ("brew install pkgconfig"). Then
 "brew install gst-plugins-base gst-plugins-good gst-plugins-bad
@@ -562,12 +580,13 @@ make install" (same as for Linux).
 To install: "sudo port install pkgconfig"; "sudo port install
 gstreamer1-gst-plugins-base gstreamer1-gst-plugins-good
 gstreamer1-gst-plugins-bad gstreamer1-gst-libav". **The MacPorts
-GStreamer is built to use X11**, so uxplay must be run from an XQuartz
-terminal, can use ZOOMFIX, and needs option "-vs ximagesink". On an
-unibody (non-retina) MacBook Pro, the default resolution wxh = 1920x1080
-was too large, but using option "-s 800x600" worked. The MacPorts
-GStreamer pipeline seems fragile against attempts to change the X11
-window size, or to rotations that switch a connected client between
+GStreamer is built to use X11**: use the special CMake option
+`-DUSE_X11=ON` when building UxPlay. Then uxplay must be run from an
+XQuartz terminal, can use ZOOMFIX, and needs option "-vs ximagesink". On
+an unibody (non-retina) MacBook Pro, the default resolution wxh =
+1920x1080 was too large, but using option "-s 800x600" worked. The
+MacPorts GStreamer pipeline seems fragile against attempts to change the
+X11 window size, or to rotations that switch a connected client between
 portrait and landscape mode while uxplay is running. Using the MacPorts
 X11 GStreamer seems only possible if the image size is left unchanged
 from the initial "-s wxh" setting (also use the iPad/iPhone setting that
@@ -692,6 +711,13 @@ will also now be the name shown above the mirror display (X11) window.
 **-nh** Do not append "@_hostname_" at the end of the AirPlay server
 name.
 
+**-sync** (In Audio-Only (ALAC)) mode: this option synchronizes audio on
+the server with video on the client, but causes the client to add a
+delay to account for latency, so pausing the stream will not take effect
+immediately. This can be mitigated by using the `-al` audio latency
+setting to change the latency (default 0.25 secs) that the server
+reports to the cient.
+
 **-s wxh** (e.g. -s 1920x1080 , which is the default ) sets the display
 resolution (width and height, in pixels). (This may be a request made to
 the AirPlay client, and perhaps will not be the final resolution you
@@ -797,16 +823,12 @@ name. (Some choices of audiosink might not work on your system.)
 **-as 0** (or just **-a**) suppresses playing of streamed audio, but
 displays streamed video.
 
-**-ao x.y** adds an audio offset time in (decimal) seconds to Audio-only
-(ALAC) streams to allow synchronization of sound playing on the UxPlay
-server with video on the client which delays playing the audio by *x.y*
-seconds (a decimal number). In the AirPlay Legacy mode used by UxPlay,
-the client cannot obtain audio latency information from the server, and
-appears to assume a latency of about 5 seconds. This can be compensated
-for with offset values such as `-ao 5` (but the effect of a pause in
-play etc., on the client will also be delayed). The -ao option accepts
-values in the range \[0,10\], which it converts to a whole number of
-milliseconds (-ao 1.2345 gives 1234 msec audio delay).
+**-al *x*** specifies an audio latency *x* in (decimal) seconds in
+Audio-only (ALAC), that is reported to the client. Values in the range
+\[0.0, 10.0\] seconds are allowed, and will be converted to a whole
+number of microseconds. Default is 0.25 sec (250000 usec). (This
+replaces the `-ao` option introduced in v1.62, as a workaround for a
+problem that is now fixed).
 
 **-ca *filename*** provides a file (where *filename* can include a full
 path) used for output of "cover art" (from Apple Music, *etc.*,) in
@@ -966,8 +988,9 @@ To check this, after starting uxplay, use the utility
 `avahi-browse -a -t` in a different terminal window on the server to
 verify that the UxPlay AirTunes and AirPlay services are correctly
 registered (only the AirTunes service is used in the "Legacy" AirPlay
-Mirror mode used by UxPlay, bit the AirPlay service is used for the
-initial contact).
+Mirror mode used by UxPlay, but the AirPlay service is used for the
+initial contact). **You may need to install avahi-utils (or some package
+with a similar name) to get avahi-browse**.
 
 The results returned by avahi-browse should show entries for uxplay like
 
@@ -1017,13 +1040,17 @@ on your system). A different reason for no audio occurred when a user
 with a firewall only opened two udp network ports: **three** are
 required (the third one receives the audio data).
 
-**Raspberry Pi** devices (-rpi option) only work with hardware GPU
-decoding if the Video4Linux2 plugin in GStreamer v1.20.x or earlier has
-been patched (see the UxPlay
+**Raspberry Pi** devices only work with hardware GPU h264 video decoding
+if the Video4Linux2 plugin in GStreamer v1.20.x or earlier has been
+patched (see the UxPlay
 [Wiki](https://github.com/FDH2/UxPlay/wiki/Gstreamer-Video4Linux2-plugin-patches)
-for patches). This may be fixed in the future when GStreamer-1.22 is
-released, or by backport patches in distributions such as Raspberry Pi
-OS (Bullseye).
+for patches). This is fixed in GStreamer-1.22, and by backport patches
+from this in distributions such as Raspberry Pi OS (Bullseye): **use
+option `-bt709` with the GStreamer-1.18.4 from Raspberry Pi OS**.. This
+also needs the bcm2835-codec kernel module that is not in the standard
+Linux kernel (it is available in Raspberry Pi OS, Ubuntu and Manjaro).
+**If you do not have this kernel module, or GStreamer \< 1.22 is not
+patched, use options `-avdec -vsync` for software h264-decoding.**
 
 Sometimes "autovideosink" may select the OpenGL renderer "glimagesink"
 which may not work correctly on your system. Try the options "-vs
@@ -1065,6 +1092,34 @@ when the client sends the "Stop Mirroring" signal, try the no-close
 option "-nc" that leaves the video window open.
 
 ### 4. GStreamer issues (missing plugins, etc.):
+
+If UxPlay fails to start, with a message that a required GStreamer
+plugin (such as "libav") was not found, first check with the GStreamer
+tool gst-inspect-1.0 to see what GStreamer knows is available. (You may
+need to install some additional GStreamer "tools" package to get
+gst-inspect-1.0). For, *e.g.* a libav problem, check with
+"`gst-inspect-1.0 libav`". If it is not shown as available to GStreamer,
+but your package manager shows the relevant package as installed (as one
+user found), try entirely removing and reinstalling the package. That
+user found that a solution to a "**Required gstreamer plugin 'libav' not
+found**" message that kept recurring was to clear the user's gstreamer
+cache with `rm -rf ~/.cache/gstreamer-1.0`.
+
+If it fails to start with an error like '`no element "avdec_aac"`' this
+is because even though gstreamer-libav is installed. it is incomplete
+because some plugins are missing: "`gst-inspect-1.0 | grep avdec_aac`"
+will show if avdec_aac is available. Some distributions (RedHat, SUSE,
+etc) provide incomplete versions of libav because of patent issues with
+codecs used by certain plugins. In those cases there will be some "extra
+package" provider like [RPM fusion](https://rpmfusion.org) (RedHat) or
+[packman](http://packman.links2linux.org/) (SUSE) where you can get
+complete packages (your distribution will usually provide instructions
+for this). The packages needed may be "libav\*" or "ffmpeg\*" packages:
+the GStreamer libav plugin package does not contain any codecs itself,
+it just provides a way for GStreamer to use ffmpeg/libav codec libraries
+which must be installed separately. For similar reasons, distributions
+may ship incomplete packages of GStreamer "plugins-bad", which is where
+"license-problematical" plugins go.
 
 To troubleshoot GStreamer execute "export GST_DEBUG=2" to set the
 GStreamer debug-level environment-variable in the terminal where you
@@ -1143,6 +1198,13 @@ the client by the AirPlay server) to be set. The "features" code and
 other settings are set in `UxPlay/lib/dnssdint.h`.
 
 # Changelog
+
+1.63 2023-02-12 Reworked audio-video synchronization, with new options
+-vsync (for Mirror mode) and -async (for Audio-Only mode, to sync with
+client video). Option -vsync makes software h264 decoding of streamed
+videos with option -avdec viable on some recent Raspberry Pi models.
+Internal change: all times are now processed in nanoseconds units.
+Removed -ao option introduced in 1.62.
 
 1.62 2023-01-18 Added Audio-only mode time offset -ao x to allow user
 synchronization of ALAC audio playing on the server with video, song

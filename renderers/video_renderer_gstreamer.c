@@ -1,6 +1,9 @@
 /**
  * RPiPlay - An open-source AirPlay mirroring server for Raspberry Pi
  * Copyright (C) 2019 Florian Draschbacher
+ * Modified for:
+ * UxPlay - An open-source AirPlay mirroring server
+ * Copyright (C) 2021-23 F. Duncanh
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +24,7 @@
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
 
+#define SECOND_IN_NSECS 1000000000UL
 #ifdef X_DISPLAY_FIX
 #include <gst/video/navigation.h>
 #include "x_display_fix.h"
@@ -29,6 +33,13 @@ static bool alt_keypress = false;
 #define MAX_X11_SEARCH_ATTEMPTS 5   /*should be less than 256 */
 static unsigned char X11_search_attempts; 
 #endif
+
+static video_renderer_t *renderer = NULL;
+static GstClockTime gst_video_pipeline_base_time = GST_CLOCK_TIME_NONE;
+static logger_t *logger = NULL;
+static unsigned short width, height, width_source, height_source;  /* not currently used */
+static bool first_packet = false;
+
 
 struct video_renderer_s {
     GstElement *appsrc, *pipeline, *sink;
@@ -96,12 +107,6 @@ static void append_videoflip (GString *launch, const videoflip_t *flip, const vi
     }
 }	
 
-static video_renderer_t *renderer = NULL;
-static GstClockTime gst_video_pipeline_base_time = GST_CLOCK_TIME_NONE;
-static logger_t *logger = NULL;
-static unsigned short width, height, width_source, height_source;  /* not currently used */
-static bool first_packet = false;
-
 /* apple uses colorimetry=1:3:5:1                                *
  * (not recognized by v4l2 plugin in Gstreamer  < 1.20.4)        *
  * See .../gst-libs/gst/video/video-color.h in gst-plugins-base  *
@@ -123,11 +128,12 @@ void video_renderer_size(float *f_width_source, float *f_height_source, float *f
 }
 
 void  video_renderer_init(logger_t *render_logger, const char *server_name, videoflip_t videoflip[2], const char *parser,
-                          const char *decoder, const char *converter, const char *videosink, const bool *initial_fullscreen) {
+                          const char *decoder, const char *converter, const char *videosink, const bool *initial_fullscreen,
+                          const bool *video_sync) {
     GError *error = NULL;
     GstCaps *caps = NULL;
     GstClock *clock = gst_system_clock_obtain();
-    g_object_set(clock, "clock-type", GST_CLOCK_TYPE_MONOTONIC, NULL);
+    g_object_set(clock, "clock-type", GST_CLOCK_TYPE_REALTIME, NULL);
 
     logger = render_logger;
 
@@ -151,7 +157,12 @@ void  video_renderer_init(logger_t *render_logger, const char *server_name, vide
     g_string_append(launch, " ! ");    
     append_videoflip(launch, &videoflip[0], &videoflip[1]);
     g_string_append(launch, videosink);
-    g_string_append(launch, " name=video_sink sync=false");
+    g_string_append(launch, " name=video_sink");
+    if (*video_sync) {
+        g_string_append(launch, " sync=true");
+    } else {
+        g_string_append(launch, " sync=false");
+    }
     logger_log(logger, LOGGER_DEBUG, "GStreamer video pipeline will be:\n\"%s\"", launch->str);
     renderer->pipeline = gst_parse_launch(launch->str, &error);
     if (error) {
@@ -218,13 +229,15 @@ void video_renderer_start() {
 #endif
 }
 
-void video_renderer_render_buffer(unsigned char* data, int *data_len, int *nal_count, uint64_t *pts_raw) {
+void video_renderer_render_buffer(unsigned char* data, int *data_len, int *nal_count, uint64_t *ntp_time) {
     GstBuffer *buffer;
-    GstClockTime pts = (GstClockTime) *pts_raw;
+    GstClockTime pts = (GstClockTime) *ntp_time; /*now in nsecs */
+    //GstClockTimeDiff latency = GST_CLOCK_DIFF(gst_element_get_current_clock_time (renderer->appsrc), pts);
     if (pts >= gst_video_pipeline_base_time) {
         pts -= gst_video_pipeline_base_time;
     } else {
-        logger_log(logger, LOGGER_ERR, "*** invalid *pts_raw < gst_video_pipeline_base_time") ;
+        logger_log(logger, LOGGER_ERR, "*** invalid ntp_time < gst_video_pipeline_base_time\n%8.6f ntp_time\n%8.6f base_time",
+                   ((double) *ntp_time) / SECOND_IN_NSECS, ((double) gst_video_pipeline_base_time) / SECOND_IN_NSECS);
         return;
     }
     g_assert(data_len != 0);
@@ -241,6 +254,7 @@ void video_renderer_render_buffer(unsigned char* data, int *data_len, int *nal_c
         }
         buffer = gst_buffer_new_allocate(NULL, *data_len, NULL);
         g_assert(buffer != NULL);
+        //g_print("video latency %8.6f\n", (double) latency / SECOND_IN_NSECS);	
         GST_BUFFER_PTS(buffer) = pts;
         gst_buffer_fill(buffer, 0, data, *data_len);
         gst_app_src_push_buffer (GST_APP_SRC(renderer->appsrc), buffer);
