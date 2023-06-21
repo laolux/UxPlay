@@ -1,7 +1,7 @@
 
 
 Name:    uxplay
-Version: 1.63
+Version: 1.65
 Release: 1%{?dist}
 Summary: UxPlay is an AirPlay server for Linux
 
@@ -45,6 +45,59 @@ UxPlay is an AirPlay server for Linux. It lets you stream the display content of
 %{_mandir}/man1/uxplay.1.gz
 
 %changelog
+* Wed Jun 21 2023 laolux <25555671+laolux@users.noreply.github.com> 1.65-1
+- Automatic commit of package [uxplay] release [1.63-1].
+  (25555671+laolux@users.noreply.github.com)
+- README fixes (fduncanh@gmail.com)
+- Automatic commit of package [uxplay] release [1.62-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.61-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.60-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.56-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.55-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.47-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.46b-1].
+  (25555671+laolux@users.noreply.github.com)
+- Automatic commit of package [uxplay] release [1.46-1].
+  (25555671+laolux@users.noreply.github.com)
+- Initialized to use tito. (25555671+laolux@users.noreply.github.com)
+- README updates (fduncanh@gmail.com)
+- corrected parsing of configuration file for quoted option items
+  (fduncanh@gmail.com)
+- Preparing for v1.65 release; cleanup after changes (fduncanh@gmail.com)
+- Disable "SupportsLegacyPairing" to allow fast connections (thanks @shuax)
+  (fduncanh@gmail.com)
+- fix unsafe strcmp (AirMyPC segfault) + timing fix for AirMyPC client
+  (fduncanh@gmail.com)
+- protocol modifications allowing "supports legacy pairing" to be disabled
+  (fduncanh@gmail.com)
+- call audio_renderer_stop after audio connection stops (fixes #201)
+  (fduncanh@gmail.com)
+- mac /Homebrew cleanup of PKG_CONFIG_PATH (fduncanh@gmail.com)
+- README update (building libplist from source) (fduncanh@gmail.com)
+- fix README typos, macOS updates (fduncanh@gmail.com)
+- UxPlay 1.64: -h, manpage and README updates (fduncanh@gmail.com)
+- add ability to use a configuration file uxplayrc (fduncanh@gmail.com)
+- clean up SPS/PPS prepend code (for IDR frames) + cosmetic cleanups
+  (fduncanh@gmail.com)
+- update README about -vsync, -async options (fduncanh@gmail.com)
+- raop_ntp.c, utils.c : fixes #192 (fduncanh@gmail.com)
+- only call utils_data_to_string in -d debug mode (fduncanh@gmail.com)
+- fix errors in recent sprintf->snprintf "fix" (fduncanh@gmail.com)
+- update README for Homebrew changes on macOS (fduncanh@gmail.com)
+- replace sprintf by snprintf (silence warning by macOS compiler)
+  (fduncanh@gmail.com)
+- update README to show R Pi 3 model B+ testing (fduncanh@gmail.com)
+- fix for homebrew on M1 macs (fduncanh@gmail.com)
+- add --help -help -? synonyms for -h; hint if option is unknown
+  (fduncanh@gmail.com)
+- README fixes (fduncanh@gmail.com)
+
 * Thu Feb 16 2023 laolux <25555671+laolux@users.noreply.github.com> 1.63-1
 - README fixes (fduncanh@gmail.com)
 - fix timestamp_to_date, etc. for nanosecond timestamps (fduncanh@gmail.com)
