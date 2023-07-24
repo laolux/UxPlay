@@ -25,6 +25,8 @@ BuildRequires:  libplist-devel >= 2.0
 BuildRequires:  avahi-compat-libdns_sd-devel
 BuildRequires:  gstreamer1-devel
 BuildRequires:  gstreamer1-plugins-base-devel
+Requires:       openssl-libs >= 3.0
+Requires:       libplist >= 2.0
 Requires:       gstreamer1-plugins-base
 Requires:       gstreamer1-plugins-good
 Requires:       gstreamer1-plugins-bad-free
@@ -39,6 +41,8 @@ BuildRequires:  %{mklibname plist-devel} >= 2.0
 BuildRequires:  %{mklibname avahi-compat-libdns_sd-devel}
 BuildRequires:  %{mklibname gstreamer1.0-devel}
 BuildRequires:  %{mklibname gstreamer-plugins-base1.0-devel}
+Requires:       %{mklibname openssl3}
+Requires:       %{mklibname plist2.0_3}   
 Requires:       gstreamer1.0-plugins-base
 Requires:       gstreamer1.0-plugins-good
 Requires:       gstreamer1.0-plugins-bad
@@ -53,6 +57,8 @@ BuildRequires:  libplist-2_0-devel
 BuildRequires:  avahi-compat-mDNSResponder-devel
 BuildRequires:  gstreamer-devel
 BuildRequires:  gstreamer-plugins-base-devel
+Requires:       libopenssl3
+Requires:       libplist-2_0-3
 Requires:       gstreamer-plugins-base
 Requires:       gstreamer-plugins-good
 Requires:       gstreamer-plugins-bad
