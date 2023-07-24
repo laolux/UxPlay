@@ -32,13 +32,13 @@ Requires:       gstreamer1-libav
 %endif
 
 #Mageia
-%if %{defined mkrel}
+%if "%{_host_vendor}" == "mageia"
 BuildRequires:  pkgconf
-BuildRequires:  openssl-devel >= 3.0
-BuildRequires:  libplist-devel >= 2.0
-BuildRequires:  avahi-compat-libdns_sd-devel
-BuildRequires:  gstreamer1.0-devel
-BuildRequires:  gstreamer1.0-plugins-base-devel
+BuildRequires:  %{mklibname openssl-devel} >= 3.0
+BuildRequires:  %{mklibname plist-devel} >= 2.0
+BuildRequires:  %{mklibname avahi-compat-libdns_sd-devel}
+BuildRequires:  %{mklibname gstreamer1.0-devel}
+BuildRequires:  %{mklibname gstreamer-plugins-base1.0-devel}
 Requires:       gstreamer1.0-plugins-base
 Requires:       gstreamer1.0-plugins-good
 Requires:       gstreamer1.0-plugins-bad
@@ -46,7 +46,7 @@ Requires:       gstreamer1.0-libav
 %endif
 
 #SUSE
-%if %{defined suse_version}
+%if "%{_host_vendor}" == "suse"
 BuildRequires:  pkg-config
 BuildRequires:  libopenssl-3-devel
 BuildRequires:  libplist-2_0-devel
@@ -71,10 +71,11 @@ server in non-mirror mode
 %autosetup -n UxPlay-%{version}
 
 %cmake -DCMAKE_INSTALL_DOCDIR=%{_docdir}/%{name}
+
 %cmake_build
 
-%if %{defined suse_version}
-#suse macro cmake_install installs from _topdir/build (misses docs in _topdir)
+%if "%{_host_vendor}" == "suse"
+#suse macro %%cmake_install installs from %%{buildsubdir} (misses docs in source directory  above it)
 cd ..   
 %endif
 
@@ -93,9 +94,8 @@ cd ..
 %{_docdir}/%{name}/LICENSE
 %{_docdir}/%{name}/llhttp/LICENSE-MIT
 
-
 %changelog
-* Thu Jul 20 2023 UxPlay maintainer  <https://github.com/FDH2/UxPlay>
+* Mon Jul 24 2023 UxPlay maintainer <https://github.com/FDH2/UxPlay>
   Initial uxplay.spec: tested on Fedora 38, Rocky Linux 9.2, OpenSUSE
   Leap 15.5, Mageia 9.
 - 
