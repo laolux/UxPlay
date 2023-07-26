@@ -101,6 +101,29 @@ cd ..
 %{_docdir}/%{name}/llhttp/LICENSE-MIT
 
 %changelog
+* Wed Jul 26 2023 laolux <25555671+laolux@users.noreply.github.com> 1.65.3-1
+- move spec file (25555671+laolux@users.noreply.github.com)
+- improve uxplay.spec (fduncanh@gmail.com)
+- README edits (fduncanh@gmail.com)
+- improvements to uxplay.spec RPM spec file (fduncanh@gmail.com)
+- prepare 1.65.3 release (fduncanh@gmail.com)
+- allow uxplay to function w/o audio in avdec_aac is missing
+  (fduncanh@gmail.com)
+- uxplay 1.65.2: add advice to clear cache if plugin not found
+  (fduncanh@gmail.com)
+- add RPM spec file, document it in README; 1.65.1 release (fduncanh@gmail.com)
+- provide graceful exit if avdec_aac is absent (fduncanh@gmail.com)
+- fixes for various compiler warnings (fduncanh@gmail.com)
+- llhttp: minor update to v8.1.1 (fduncanh@gmail.com)
+- fix minor error in uxplay -h text (fduncanh@gmail.com)
+- README update about R Pi OS Legacy (Buster) (fduncanh@gmail.com)
+- cosmetic fixes to debug output (fduncanh@gmail.com)
+- replace a libplist-2.1.0 function, restore Debian 10 compatibility
+  (fduncanh@gmail.com)
+- README update (fduncanh@gmail.com)
+- WIN32 use default location if BONJOUR_SDK_HOME not set (fduncanh@gmail.com)
+- README updates (fduncanh@gmail.com)
+
 * Mon Jul 24 2023 UxPlay maintainer <https://github.com/FDH2/UxPlay>
   Initial uxplay.spec: tested on Fedora 38, Rocky Linux 9.2, OpenSUSE
   Leap 15.5, Mageia 9.
