@@ -42,6 +42,23 @@ alt="Current Packaging status" /></a>.</p>
 “<code>sudo apt install uxplay</code>”; on FreeBSD with
 “<code>sudo pkg install uxplay</code>”. Also available on Arch-based
 systems through AUR.</p></li>
+<li><p><strong>NEW</strong>: while no RPM-based distributions have yet
+packaged UxPlay, a RPM “specfile” <strong>uxplay.spec</strong> is now
+provided with recent <a
+href="https://github.com/FDH2/UxPlay/releases">releases</a> (see their
+“Assets”), and can also be found in the UxPlay source top directory. To
+build a RPM package, install rpmdevtools, create a rpmbuild tree with
+“<code>rpmdev-setuptree</code>”, and copy uxplay.spec into
+<code>~/rpmbuild/SPECS</code>. In that directory, run
+“<code>rpmdev-spectool -g uxplay.spec</code>” to download the
+corresponding source file <code>uxplay-*.tar.gz</code>, which should
+then be moved into <code>~/rpmbuild/SOURCES</code>; then run
+“<code>rpmbuild -ba uxplay.spec</code>” (you will need to install any
+required dependencies this reports). This should create an installable
+uxplay RPM package in a subdirectory of <code>~/rpmbuild/RPMS</code>.
+(<strong>uxplay.spec</strong> is tested on Fedora 38, Rocky Linux 9.2,
+OpenSUSE Leap 15.5, and Mageia 9; it can be easily modified to include
+dependency lists for other RPM-based distributions.)</p></li>
 <li><p>On Linux and *BSD the mDNS/DNS-SD (Bonjour/ZeroConf) local
 network services needed by UxPlay are usually provided by Avahi:
 <strong>if there is a firewall on the server that will host UxPlay, make
@@ -85,11 +102,11 @@ href="https://github.com/FDH2/UxPlay">UxPlay site</a>).</p>
 Debian (10 “Buster”, 11 “Bullseye”, 12 “Bookworm”), Ubuntu (20.04 LTS,
 22.04 LTS, 23.04; also Ubuntu derivatives Linux Mint 20.3, Pop!_OS 22.04
 (NVIDIA edition)), Red Hat and clones (Fedora 38, Rocky Linux 9.2),
-openSUSE 15.4, Arch Linux 23.05, macOS 13.3 (Intel and M2), FreeBSD
-13.2, Windows 10 and 11 (64 bit).</p>
+Mageia 9, OpenMandriva “ROME”, openSUSE 15.5, Arch Linux 23.05, macOS
+13.3 (Intel and M2), FreeBSD 13.2, Windows 10 and 11 (64 bit).</p>
 <p>On Raspberry Pi 4 model B, it is tested on Raspberry Pi OS (Bullseye)
 (32- and 64-bit), Ubuntu 22.04 LTS and 23.04, Manjaro RPi4 23.02, and
-(without hardware video decoding) on openSUSE 15.4. Also tested on
+(without hardware video decoding) on openSUSE 15.5. Also tested on
 Raspberry Pi 3 model B+.</p>
 <p>Its main use is to act like an AppleTV for screen-mirroring (with
 audio) of iOS/iPadOS/macOS clients (iPhone, iPod Touch, iPad, Mac
@@ -168,7 +185,7 @@ the proprietary NVIDIA drivers.</p></li>
 gstreamer1.0-plugins-bad since GStreamer-1.18.0) can be used for
 accelerated video decoding on the NVIDIA GPU after NVIDIA’s CUDA driver
 <code>libcuda.so</code> is installed. For GStreamer-1.16.3 or earlier,
-use the older plugin <code>nvdec</code>, which must be <a
+the plugin is called <code>nvdec</code>, and must be <a
 href="https://github.com/FDH2/UxPlay/wiki/NVIDIA-nvdec-and-nvenc-plugins">built
 by the user</a>.</p></li>
 <li><p><strong>Video4Linux2 support for the Raspberry Pi Broadcom 2835
@@ -232,6 +249,16 @@ README). If you have a non-standard OpenSSL installation, you may need
 to set the environment variable OPENSSL_ROOT_DIR (<em>e.g.</em> ,
 “<code>export OPENSSL_ROOT_DIR=/usr/local/lib64</code>” if that is where
 it is installed).</p>
+<ul>
+<li>Most users will use the GStreamer supplied by their distribution,
+but a few (in particular users of Raspberry Pi OS Lite Legacy (Buster)
+on a Raspberry Pi model 4B who wish to stay on that unsupported Legacy
+OS for compatibility with other apps) should instead build a newer
+Gstreamer from source following <a
+href="https://github.com/FDH2/UxPlay/wiki/Building-latest-GStreamer-from-source-on-distributions-with-older-GStreamer-(e.g.-Raspberry-Pi-OS-).">these
+instructions</a> . <strong>Do this <em>before</em> building
+UxPlay</strong>.</li>
+</ul>
 <p>In a terminal window, change directories to the source directory of
 the downloaded source code (“UxPlay-*”, “*” = “master” or the release
 tag for zipfile downloads, “UxPlay” for “git clone” downloads), then
@@ -254,15 +281,18 @@ UxPlay <em>without</em> any X11 dependence, use the cmake option
 <code>-DNO_X11_DEPS=ON</code>.</li>
 </ul>
 <ol type="1">
-<li><code>sudo apt-get install libssl-dev libplist-dev</code>“. (unless
-you need to build OpenSSL and libplist from source).</li>
-<li><code>sudo apt-get install libavahi-compat-libdnssd-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev</code>.</li>
-<li><code>cmake .</code> (For a cleaner build, which is useful if you
-modify the source, replace this by
-“<code>mkdir build; cd build; cmake ..</code>”: you can then delete the
-<code>build</code> directory if needed, without affecting the source.)
-Also add any cmake “<code>-D</code>” options here as needed (e.g,
-<code>-DNO_X11_DEPS=ON</code> or
+<li><code>sudo apt-get install libssl-dev libplist-dev</code>“.
+(<em>unless you need to build OpenSSL and libplist from
+source</em>).</li>
+<li><code>sudo apt-get install libavahi-compat-libdnssd-dev</code></li>
+<li><code>sudo apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev</code>.
+(*<em>Skip if you built Gstreamer from source</em>)</li>
+<li><code>cmake .</code> (<em>For a cleaner build, which is useful if
+you modify the source, replace this by</em>
+“<code>mkdir build; cd build; cmake ..</code>”: <em>you can then delete
+the contents of the <code>build</code> directory if needed, without
+affecting the source.</em>) Also add any cmake “<code>-D</code>” options
+here as needed (e.g, <code>-DNO_X11_DEPS=ON</code> or
 <code>-DNO_MARCH_NATIVE=ON</code>).</li>
 <li><code>make</code></li>
 <li><code>sudo make install</code> (you can afterwards uninstall with
@@ -280,6 +310,10 @@ build process, if you wish to test before installing (in which case the
 GStreamer plugins must first be installed).</p>
 <h3 id="building-on-non-debian-linux-and-bsd">Building on non-Debian
 Linux and *BSD</h3>
+<p><strong>For those with RPM-based distributions, a RPM spec file
+uxplay.spec is also available for building a rpm package with
+rpmbuild</strong> (tested on Fedora 38, Rocky Linux 9.2 (RHEL clone),
+OpenSUSE 15.5, and Mageia 9; see “Packaging Status” section)</p>
 <ul>
 <li><p><strong>Red Hat, or clones like CentOS (now continued as Rocky
 Linux or Alma Linux):</strong> (sudo dnf install, or sudo yum install)
@@ -287,6 +321,10 @@ openssl-devel libplist-devel avahi-compat-libdns_sd-devel
 gstreamer1-devel gstreamer1-plugins-base-devel (+libX11-devel for
 fullscreen X11) <em>(some of these may be in the “CodeReady” add-on
 repository, called “PowerTools” by clones)</em></p></li>
+<li><p><strong>Mageia, OpenMandriva:</strong> Same as Red Hat, except
+for name changes: (Mageia) “gstreamer1.0-devel”,
+“gstreamer-plugins-base1.0-devel”; (OpenMandriva) “libopenssl-devel”,
+“gstreamer-1.0-devel”, “libgst-plugins-base1.0-devel”.</p></li>
 <li><p><strong>openSUSE:</strong> (sudo zypper install)
 libopenssl-3-devel (formerly libopenssl-devel) libplist-2_0-devel
 (formerly libplist-devel) avahi-compat-mDNSResponder-devel
@@ -301,8 +339,10 @@ the dns_sd library. OpenSSL is already installed as a System
 Library.</p></li>
 </ul>
 <h2 id="running-uxplay">Running UxPlay</h2>
-<h3 id="installing-plugins-debian-based-linux-systems">Installing
-plugins (Debian-based Linux systems)</h3>
+<h3
+id="installing-plugins-debian-based-linux-systems-skip-if-you-built-a-complete-gstreamer-from-source">Installing
+plugins (Debian-based Linux systems) (<em>skip if you built a complete
+GStreamer from source</em>)</h3>
 <p>Next install the GStreamer plugins that are needed with
 <code>sudo apt-get install gstreamer1.0-&lt;plugin&gt;</code>. Values of
 <code>&lt;plugin&gt;</code> required are:</p>
@@ -327,31 +367,36 @@ on how your audio is set up.</p>
 <li>Also install “<strong>gstreamer1.0-tools</strong>” to get the
 utility gst-inspect-1.0 for examining the GStreamer installation.</li>
 </ul>
-<h3 id="installing-plugins-non-debian-based-linux-or-bsd">Installing
-plugins (Non-Debian-based Linux or *BSD)</h3>
+<h3
+id="installing-plugins-non-debian-based-linux-or-bsd-skip-if-you-built-a-complete-gstreamer-from-source">Installing
+plugins (Non-Debian-based Linux or *BSD) (<em>skip if you built a
+complete GStreamer from source</em>)</h3>
+<p>In some cases, because of patent issues, the libav plugin feature
+<strong>avdec_aac</strong> needed for decoding AAC audio in mirror mode
+is not provided in the official distribution: get it from community
+repositories for those distributions.</p>
 <ul>
 <li><p><strong>Red Hat, or clones like CentOS (now continued as Rocky
 Linux or Alma Linux):</strong> (sudo dnf install, or sudo yum install)
 gstreamer1-libav gstreamer1-plugins-bad-free (+ gstreamer1-vaapi for
-Intel/AMD graphics). <em>You may need to get some of them (in particular
-gstreamer1-libav) from <a href="https://rpmfusion.org">rpmfusion.org</a>
-(which provides packages including plugins that RedHat does not ship for
-license reasons). [In recent <strong>Fedora</strong>, the libav plugin
-package is renamed to “gstreamer1-plugin-libav”, which now needs the RPM
-Fusion package ffmpeg-libs for the patent-encumbered code which RedHat
-does not provide: check with “<code>rpm -qi ffmpeg-libs</code>” that it
-lists “Packager” as RPM Fusion; if this is not installed, uxplay will
-fail to start, with error: <strong>no element “avdec_aac”</strong>
-]</em>.</p></li>
+Intel/AMD graphics). In recent Fedora, gstreamer1-libav is renamed
+gstreamer1-plugin-libav. <strong>To get avdec_aac, install packages from
+<a href="https://rpmfusion.org">rpmfusion.org</a></strong>: (get
+ffmpeg-libs from rpmfusion, on RHEL, but not recent Fedora, also get
+gstreamer1-libav from there).</p></li>
+<li><p><strong>Mageia, OpenMandriva:</strong> (sudo dnf install, or sudo
+yum install) gstreamer1.0-libav gstreamer1.0-plugins-bad (+
+gstreamer1.0-vaapi for Intel/AMD graphics). <strong>On Mageia, to get
+avdec_aac, install ffmpeg from the “tainted” repository</strong>, (which
+also provides a more complete gstreamer1.0-plugins-bad).</p></li>
 <li><p><strong>openSUSE:</strong> (sudo zypper install)
 gstreamer-plugins-libav gstreamer-plugins-bad (+ gstreamer-plugins-vaapi
-for Intel/AMD graphics). <em>In some cases, you may need to use
-gstreamer or libav* packages for openSUSE from <a
+for Intel/AMD graphics). <strong>To get avdec_aac, install libav*
+packages for openSUSE from <a
 href="https://ftp.gwdg.de/pub/linux/misc/packman/suse/">Packman</a>
-“Essentials” (which provides packages including plugins that OpenSUSE
-does not ship for license reasons; recommendation: after adding the
-Packman repository, use the option in YaST Software management to switch
-all system packages for multimedia to Packman).</em></p></li>
+“Essentials”</strong>; recommendation: after adding the Packman
+repository, use the option in YaST Software management to switch all
+system packages for multimedia to Packman).</p></li>
 <li><p><strong>Arch Linux</strong> (sudo pacman -Syu) gst-plugins-good
 gst-plugins-bad gst-libav (+ gstreamer-vaapi for Intel/AMD
 graphics).</p></li>
@@ -455,12 +500,17 @@ depends on your operating system and graphics hardware: use
 “<code>gst-inspect-1.0 | grep sink | grep -e video -e Video -e image</code>”
 to see what is available. Some possibilites on Linux/*BSD are:</p>
 <ul>
-<li><p>glimagesink (OpenGL), waylandsink</p></li>
-<li><p>xvimagesink, ximagesink (X11)</p></li>
-<li><p>kmssink, fbdevsink (console graphics without X11)</p></li>
-<li><p>vaapisink (for Intel/AMD hardware-accelerated graphics); for
-NVIDIA hardware graphics (CUDA) use glimagesink combined with
-<code>-vd nvh264dec</code>.</p></li>
+<li><p><strong>glimagesink</strong> (OpenGL),
+<strong>waylandsink</strong></p></li>
+<li><p><strong>xvimagesink</strong>, <strong>ximagesink</strong>
+(X11)</p></li>
+<li><p><strong>kmssink</strong>, <strong>fbdevsink</strong> (console
+graphics without X11)</p></li>
+<li><p><strong>vaapisink</strong> (for Intel/AMD hardware-accelerated
+graphics); for NVIDIA hardware graphics (with CUDA) use
+<strong>glimagesink</strong> combined with “<code>-vd nvh264dec</code>”
+(or “nvh264sldec”, a new variant which will become “nvh264dec” in
+GStreamer-1.24).</p></li>
 </ul>
 <p>GStreamer also searches for the best “audiosink”; override its choice
 with <code>-as &lt;audiosink&gt;</code>. Choices on Linux include
@@ -471,7 +521,7 @@ incorrectly-configured or absent accelerated hardware h264 video
 decoding (e.g., VAAPI). Try “<code>uxplay -avdec</code>” to force
 software video decoding; if this works you can then try to fix
 accelerated hardware video decoding if you need it, or just uninstall
-the GStreamer VAAPI plugin. </strong></p>
+the GStreamer vaapi plugin.</strong></p>
 <p>See <a href="#usage">Usage</a> for more run-time options.</p>
 <h3
 id="special-instructions-for-raspberry-pi-tested-on-r-pi-4-model-b-8gb-and-r-pi-3-model-b"><strong>Special
@@ -485,13 +535,25 @@ synchronized.</p></li>
 <li><p>For best performance, the Raspberry Pi needs the GStreamer
 Video4linux2 plugin to use its Broadcom GPU hardware for decoding h264
 video. This needs the bcm2835_codec kernel module which is maintained
-oustide the mainline Linux kernel by Raspberry Pi in the the <a
+outside the mainline Linux kernel by Raspberry Pi in the the <a
 href="https://github.com/raspberrypi/linux">Raspberry Pi kernel
 tree</a>, and the only distributions for R Pi that are known to supply
 it include Raspberry Pi OS, Ubuntu, and Manjaro (all available from
 Raspberry Pi with their Raspberry Pi Imager). Other distributions
 generally do not provide it: <strong>without this kernel module, UxPlay
 cannot use the decoding firmware in the GPU.</strong></p></li>
+<li><p>On a Raspberry Pi model 4B running the unsupported “Legacy” R Pi
+OS (Buster), note that this comes with a very old GStreamer-1.14.4
+<strong>that cannot be patched to access the Broadcom GPU</strong>. If
+you need to stay on the unsupported “Legacy” OS (“Lite” version), but
+want to use UxPlay with hardware video decoding, you need to first build
+a complete newer GStreamer from source using <a
+href="https://github.com/FDH2/UxPlay/wiki/Building-latest-GStreamer-from-source-on-distributions-with-older-GStreamer-(e.g.-Raspberry-Pi-OS-).">these
+instructions</a> before building UxPlay. Note that a model 3B+ Pi
+running the Legacy OS can access the GPU with GStreamer-1.14’s omx
+plugin (use option “<code>-vd omxh264dec</code>”), but this plugin is
+broken on model 4B’s firmware, and omx support was removed in R Pi OS
+(Bullseye).</p></li>
 </ul>
 <p>For use of the GPU, use raspi-config “Performance Options” (on
 Raspberry Pi OS, use a similar tool on other distributions) to allocate
@@ -667,19 +729,25 @@ compiler.</h2>
 <ol type="1">
 <li><p>Download and install <strong>Bonjour SDK for Windows
 v3.0</strong> from the official Apple site <a
-href="https://developer.apple.com/download/all/?q=Bonjour%20SDK%20for%20Windows">https://developer.apple.com/download</a></p></li>
+href="https://developer.apple.com/download/all/?q=Bonjour%20SDK%20for%20Windows">https://developer.apple.com/download</a>.
+(Apple makes you register as a developer to access it; if you do not
+want to go through the registration process, you can download the SDK
+without any registration at <a
+href="https://www.softpedia.com/get/Programming/SDK-DDK/Bonjour-SDK.shtml">softpedia.com</a>.)
+This should install the Bonjour SDK as
+<code>C:\Program Files\Bonjour SDK</code></p></li>
 <li><p>(This is for 64-bit Windows; a build for 32-bit Windows should be
 possible, but is not tested.) The unix-like MSYS2 build environment will
 be used: download and install MSYS2 from the official site <a
 href="https://www.msys2.org">https://www.msys2.org/</a>. Accept the
 default installation location <code>C:\mysys64</code>.</p></li>
-<li><p>Next update MSYS2 and install the <strong>MinGW-64</strong>
-compiler and <strong>cmake</strong> (<a
-href="https://packages.msys2.org/package/">MSYS2 packages</a> are
-installed with a variant of the “pacman” package manager used by Arch
-Linux). Open a MSYS2 MinGW x64 terminal from the MSYS2 64 bit tab in the
-Windows Start menu, then run</p>
-<pre><code>pacman -Syu mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc</code></pre>
+<li><p><a href="https://packages.msys2.org/package/">MSYS2 packages</a>
+are installed with a variant of the “pacman” package manager used by
+Arch Linux. Open a “MSYS2 MINGW64” terminal from the MSYS2 tab in the
+Windows Start menu, and update the new MSYS2 installation with “pacman
+-Syu”. Then install the <strong>MinGW-64</strong> compiler and
+<strong>cmake</strong></p>
+<pre><code>pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc</code></pre>
 <p>The compiler with all required dependencies will be installed in the
 msys64 directory, with default path <code>C:/msys64/mingw64</code>. Here
 we will simply build UxPlay from the command line in the MSYS2
@@ -698,7 +766,11 @@ href="https://gstreamer.freedesktop.org/download/">official GStreamer
 site</a>, but only the MinGW 64-bit build on MSYS2 has been
 tested.</p></li>
 <li><p>cd to the UxPlay source directory, then
-“<code>mkdir build</code>” and “<code>cd build</code>”, followed by</p>
+“<code>mkdir build</code>” and “<code>cd build</code>”. The build
+process assumes that the Bonjour SDK is installed at
+<code>C:\Program Files\Bonjour SDK</code>. If it is somewhere else, set
+the enviroment variable BONJOUR_SDK_HOME to point to its location. Then
+build UxPlay with</p>
 <p><code>cmake ..</code></p>
 <p><code>ninja</code></p></li>
 <li><p>Assuming no error in either of these, you will have built the
@@ -1197,20 +1269,27 @@ gstreamer plugin ‘libav’ not found</strong>” message that kept recurring
 was to clear the user’s gstreamer cache.</p>
 <p>If it fails to start with an error like
 ‘<code>no element "avdec_aac"</code>’ this is because even though
-gstreamer-libav is installed. it is incomplete because some plugins are
-missing: “<code>gst-inspect-1.0 | grep avdec_aac</code>” will show if
-avdec_aac is available. Some distributions (RedHat, SUSE, etc) provide
-incomplete versions of libav because of patent issues with codecs used
-by certain plugins. In those cases there will be some “extra package”
-provider like <a href="https://rpmfusion.org">RPM fusion</a> (RedHat) or
-<a href="http://packman.links2linux.org/">packman</a> (SUSE) where you
-can get complete packages (your distribution will usually provide
-instructions for this). The packages needed may be “libav*” or “ffmpeg*”
-packages: the GStreamer libav plugin package does not contain any codecs
-itself, it just provides a way for GStreamer to use ffmpeg/libav codec
-libraries which must be installed separately. For similar reasons,
-distributions may ship incomplete packages of GStreamer “plugins-bad”,
-which is where “license-problematical” plugins go.</p>
+gstreamer-libav is installed. it is incomplete because some plugin
+features are missing: “<code>gst-inspect-1.0 | grep avdec_aac</code>”
+will show if avdec_aac is available. Unlike other GStreamer plugins, the
+libav plugin is a front end to FFmpeg codecs which provide avdec_*. Some
+distributions (RedHat, SUSE, etc) provide incomplete versions of FFmpeg
+because of patent issues with codecs used by certain plugins. In those
+cases there will be some “extra package” provider like <a
+href="https://rpmfusion.org">RPM fusion</a> (RedHat), <a
+href="http://packman.links2linux.org/">packman</a> (SUSE) where you can
+get complete packages (your distribution will usually provide
+instructions for this, Mageia puts them in an optional “tainted” repo).
+The packages needed may be “ffmpeg*” or “libav*” packages: the GStreamer
+libav plugin package does not contain any codecs itself, it just
+provides a way for GStreamer to use ffmpeg/libav codec libraries which
+must be installed separately. For similar reasons, distributions may
+ship incomplete packages of GStreamer “plugins-bad”.</p>
+<ul>
+<li>starting with release UxPlay-1.65.3, UxPlay will continue to
+function, but without audio in mirror mode, if avdec_aac is
+missing.</li>
+</ul>
 <p>To troubleshoot GStreamer execute “export GST_DEBUG=2” to set the
 GStreamer debug-level environment-variable in the terminal where you
 will run uxplay, so that you see warning and error messages; see <a
@@ -1294,6 +1373,11 @@ an AppleTV6,2 with sourceVersion 380.20.1 (an AppleTV 4K 1st gen,
 introduced 2017, running tvOS 12.2.1), so it does not seem to matter
 what UxPlay claims to be.</p>
 <h1 id="changelog">Changelog</h1>
+<p>1.65.3 2023-07-23 Add RPM spec file; add graceful exit if required
+gstreamer libav feature “avdec_aac” is missing: (this occurs in
+RPM-based distributions that ship an incomplete FFmpeg for Patent or
+License reasons, and rely on users installing an externally-supplied
+complete FFmpeg).</p>
 <p>1.65 2023-06-03 Eliminate pair_setup part of connection protocol to
 allow faster connections with clients (thanks to <span class="citation"
 data-cites="shuax">@shuax</span> #176 for this discovery); to revert,
