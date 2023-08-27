@@ -101,6 +101,10 @@ cd ..
 %{_docdir}/%{name}/llhttp/LICENSE-MIT
 
 %changelog
+* Sun Aug 27 2023 laolux <25555671+laolux@users.noreply.github.com> 1.65.3-2
+- fixed build, archive name has no capital letters
+  (25555671+laolux@users.noreply.github.com)
+
 * Wed Jul 26 2023 laolux <25555671+laolux@users.noreply.github.com> 1.65.3-1
 - move spec file (25555671+laolux@users.noreply.github.com)
 - improve uxplay.spec (fduncanh@gmail.com)
