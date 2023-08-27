@@ -1,6 +1,6 @@
 Name:           uxplay
 Version:        1.65.3
-Release:        1%{?dist}
+Release:        2%{?dist}
 
 %define gittag  v%{version}
 
@@ -74,7 +74,7 @@ server in non-mirror mode
 
 %prep
 
-%autosetup -n UxPlay-%{version}
+%autosetup -n uxplay-%{version}
 
 %cmake -DCMAKE_INSTALL_DOCDIR=%{_docdir}/%{name}
 
