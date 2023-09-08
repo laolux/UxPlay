@@ -134,6 +134,32 @@ cd build
 %{_docdir}/%{name}/llhttp/LICENSE-MIT
 
 %changelog
+* Fri Sep 08 2023 laolux <25555671+laolux@users.noreply.github.com> 1.66-1
+- x_display_fix.h: fix X11 segment fault when enum_windows called Provided by
+  @march1993 fixes #212 (125931004@qq.com)
+- require cmake>=3.5 to silence deprecation warning (fduncanh@gmail.com)
+- Update README for 1.66 release (fduncanh@gmail.com)
+- update README for new options -restrict, etc. (fduncanh@gmail.com)
+- add option to restrict clients by clientID (fduncanh@gmail.com)
+- pause/resume gstreamer stream when video stream stops/starts
+  (51303986+thiccaxe@users.noreply.github.com)
+- completely ignore timestamps when  sync=false (gstreamer)
+  (fduncanh@gmail.com)
+- code cleanup: remove unneeded memset (fduncanh@gmail.com)
+- clarify comment about client pairing and ecdh_secret (fduncanh@gmail.com)
+- raop_handlers, rtp, rtp_mirror: remove dead "use_udp" code
+  (fduncanh@gmail.com)
+- eliminate unneeded socket address returns from recvfrom (fduncanh@gmail.com)
+- allow IPV6 clients (untested) (fduncanh@gmail.com)
+- code cleanup uxplay.cpp (fduncanh@gmail.com)
+- code cleanup: remove unused variable "delay" (fduncanh@gmail.com)
+- correct name "osximagesink" to "osxvideosink" (fduncanh@gmail.com)
+- informational/README updates; adjust uxplay.spec for OpenMandriva
+  (fduncanh@gmail.com)
+- small cleanup of last change (fduncanh@gmail.com)
+- README edits (fduncanh@gmail.com)
+- improvements to uxplay.spec RPM spec file (fduncanh@gmail.com)
+
 * Wed Sep 6 2023 UxPlay maintainer <https://github.com/FDH2/UxPlay>
   Initial uxplay.spec: tested on Fedora 38, Rocky Linux 9.2, OpenSUSE
   Leap 15.5, Mageia 9, OpenMandriva ROME, PCLinuxOS
