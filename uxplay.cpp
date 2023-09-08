@@ -59,7 +59,7 @@
 #include "renderers/video_renderer.h"
 #include "renderers/audio_renderer.h"
 
-#define VERSION "1.65"
+#define VERSION "1.66"
 
 #define SECOND_IN_USECS 1000000
 #define SECOND_IN_NSECS 1000000000UL
@@ -121,6 +121,9 @@ static int max_connections = 2;
 static unsigned short raop_port;
 static unsigned short airplay_port;
 static uint64_t remote_clock_offset = 0;
+static std::vector<std::string> allowed_clients;
+static std::vector<std::string> blocked_clients;
+static bool restrict_clients;
 
 /* 95 byte png file with a 1x1 white square (single pixel): placeholder for coverart*/
 static const unsigned char empty_image[] = {
@@ -425,7 +428,7 @@ static void print_info (char *name) {
     printf("          another choice when using v4l2h264dec: v4l2convert\n");
     printf("-vs ...   Choose the GStreamer videosink; default \"autovideosink\"\n");
     printf("          some choices: ximagesink,xvimagesink,vaapisink,glimagesink,\n");
-    printf("          gtksink,waylandsink,osximagesink,kmssink,d3d11videosink etc.\n");
+    printf("          gtksink,waylandsink,osxvideosink,kmssink,d3d11videosink etc.\n");
     printf("-vs 0     Streamed audio only, with no video display window\n");
     printf("-v4l2     Use Video4Linux2 for GPU hardware h264 decoding\n");
     printf("-bt709    A workaround (bt709 color) sometimes needed on RPi\n"); 
@@ -442,6 +445,11 @@ static void print_info (char *name) {
     printf("-reset n  Reset after 3n seconds client silence (default %d, 0=never)\n", NTP_TIMEOUT_LIMIT);
     printf("-nc       do Not Close video window when client stops mirroring\n");
     printf("-nohold   Drop current connection when new client connects.\n");
+    printf("-restrict Restrict clients to those specified by \"-allow <deviceID>\"\n");
+    printf("          UxPlay displays deviceID when a client attempts to connect\n");
+    printf("          Use \"-restrict no\" for no client restrictions (default)\n");
+    printf("-allow <i>Permit deviceID = <i> to connect if restrictions are imposed\n");
+    printf("-block <i>Always block connections from deviceID = <i>\n");
     printf("-FPSdata  Show video-streaming performance reports sent by client.\n");
     printf("-fps n    Set maximum allowed streaming framerate, default 30\n");
     printf("-f {H|V|I}Horizontal|Vertical flip, or both=Inversion=rotate 180 deg\n");
@@ -599,7 +607,24 @@ static void parse_arguments (int argc, char *argv[]) {
     // Parse arguments
     for (int i = 1; i < argc; i++) {
         std::string arg(argv[i]);
-        if (arg == "-n") {
+	if (arg == "-allow") {
+            if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
+            i++;
+	    allowed_clients.push_back(argv[i]);
+	} else if (arg == "-block") {
+            if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
+            i++;
+	    blocked_clients.push_back(argv[i]);    
+	} else if (arg == "-restrict") {
+            if (i <  argc - 1) {
+                if (strlen(argv[i+1]) == 2 && strncmp(argv[i+1], "no", 2) == 0) {
+                    restrict_clients = false;
+                    i++;
+                    continue;
+                }
+	    } 
+            restrict_clients = true;
+        } else if (arg == "-n") {
             if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
             server_name = std::string(argv[++i]);
         } else if (arg == "-nh") {
@@ -1040,6 +1065,29 @@ static int start_dnssd(std::vector<char> hw_addr, std::string name) {
     return 0;
 }
 
+static bool check_client(char *deviceid) {
+    bool ret = false;
+    int list =  allowed_clients.size();
+    for (int i = 0; i < list ; i++) {
+        if (!strcmp(deviceid,allowed_clients[i].c_str())) {
+	    ret = true;
+	    break;
+        }
+    }
+    return ret;
+}
+
+static bool check_blocked_client(char *deviceid) {
+    bool ret = false;
+    int list =  blocked_clients.size();
+    for (int i = 0; i < list ; i++) {
+        if (!strcmp(deviceid,blocked_clients[i].c_str())) {
+	    ret = true;
+	    break;
+        }
+    }
+    return ret;
+}
 
 // Server callbacks
 extern "C" void conn_init (void *cls) {
@@ -1079,6 +1127,23 @@ extern "C" void conn_teardown(void *cls, bool *teardown_96, bool *teardown_110) 
     }
 }
 
+extern "C" void report_client_request(void *cls, char *deviceid, char * model, char *name, bool * admit) {
+    LOGI("connection request from %s (%s) with deviceID = %s\n", name, model, deviceid);
+    if (restrict_clients) {
+        *admit = check_client(deviceid);
+	if (*admit == false) {
+            LOGI("client connections have been restricted to those with listed deviceID,\nuse \"-allow %s\" to allow this client to connect.\n",
+                 deviceid);
+	}
+    } else {
+        *admit = true;
+    }
+    if (check_blocked_client(deviceid)) {
+        *admit = false;
+        LOGI("*** attempt to connect by blocked client (clientID %s): DENIED\n", deviceid);
+    }
+}
+
 extern "C" void audio_process (void *cls, raop_ntp_t *ntp, audio_decode_struct *data) {
     if (dump_audio) {
         dump_audio_to_file(data->data, data->data_len, (data->data)[0] & 0xf0);
@@ -1088,12 +1153,22 @@ extern "C" void audio_process (void *cls, raop_ntp_t *ntp, audio_decode_struct *
             remote_clock_offset = data->ntp_time_local - data->ntp_time_remote;
         }
         data->ntp_time_remote = data->ntp_time_remote + remote_clock_offset;
-        if (data->ct == 2 && audio_delay_alac) {
-            data->ntp_time_remote = (uint64_t) ((int64_t) data->ntp_time_remote  + audio_delay_alac);
-        } else if (audio_delay_aac) {
-            data->ntp_time_remote = (uint64_t) ((int64_t) data->ntp_time_remote + audio_delay_aac);
+        switch (data->ct) {
+        case 2:
+            if (audio_delay_alac) {
+                data->ntp_time_remote = (uint64_t) ((int64_t) data->ntp_time_remote + audio_delay_alac);
+            }
+            break;
+        case 4:
+        case 8:
+            if (audio_delay_aac) {
+                data->ntp_time_remote = (uint64_t) ((int64_t) data->ntp_time_remote + audio_delay_aac);
+            }
+            break;
+        default:
+            break;
         }
-      audio_renderer_render_buffer(data->data, &(data->data_len), &(data->seqnum), &(data->ntp_time_remote));
+        audio_renderer_render_buffer(data->data, &(data->data_len), &(data->seqnum), &(data->ntp_time_remote));
     }
 }
 
@@ -1109,6 +1184,19 @@ extern "C" void video_process (void *cls, raop_ntp_t *ntp, h264_decode_struct *d
         video_renderer_render_buffer(data->data, &(data->data_len), &(data->nal_count), &(data->ntp_time_remote));
     }
 }
+
+extern "C" void video_pause (void *cls) {
+    if (use_video) {
+        video_renderer_pause();
+    }
+}
+
+extern "C" void video_resume (void *cls) {
+    if (use_video) {
+        video_renderer_resume();
+    }
+}
+
 
 extern "C" void audio_flush (void *cls) {
     if (use_audio) {
@@ -1244,12 +1332,15 @@ int start_raop_server (unsigned short display[5], unsigned short tcp[3], unsigne
     raop_cbs.video_process = video_process;
     raop_cbs.audio_flush = audio_flush;
     raop_cbs.video_flush = video_flush;
+    raop_cbs.video_pause = video_pause;
+    raop_cbs.video_resume = video_resume;
     raop_cbs.audio_set_volume = audio_set_volume;
     raop_cbs.audio_get_format = audio_get_format;
     raop_cbs.video_report_size = video_report_size;
     raop_cbs.audio_set_metadata = audio_set_metadata;
     raop_cbs.audio_set_coverart = audio_set_coverart;
-    
+    raop_cbs.report_client_request = report_client_request;
+
     /* set max number of connections = 2 to protect against capture by new client */
     raop = raop_init(max_connections, &raop_cbs);
     if (raop == NULL) {

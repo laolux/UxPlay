@@ -1,8 +1,8 @@
 Name:           uxplay
-Version:        1.65.3
-Release:        2%{?dist}
+Version:        1.66
+Release:        1%{?dist}
 
-%define gittag  v%{version}
+%global gittag  v%{version}
 
 Summary:        AirPlay-Mirror and AirPlay-Audio server
 License:        GPLv3+
@@ -31,22 +31,7 @@ Requires:       gstreamer1-plugins-base
 Requires:       gstreamer1-plugins-good
 Requires:       gstreamer1-plugins-bad-free
 Requires:       gstreamer1-libav
-%endif
-
-#Mageia
-%if "%{_host_vendor}" == "mageia"
-BuildRequires:  pkgconf
-BuildRequires:  %{mklibname openssl-devel} >= 3.0
-BuildRequires:  %{mklibname plist-devel} >= 2.0
-BuildRequires:  %{mklibname avahi-compat-libdns_sd-devel}
-BuildRequires:  %{mklibname gstreamer1.0-devel}
-BuildRequires:  %{mklibname gstreamer-plugins-base1.0-devel}
-Requires:       %{mklibname openssl3}
-Requires:       %{mklibname plist2.0_3}   
-Requires:       gstreamer1.0-plugins-base
-Requires:       gstreamer1.0-plugins-good
-Requires:       gstreamer1.0-plugins-bad
-Requires:       gstreamer1.0-libav
+%define  cmake_builddir redhat-linux-build
 %endif
 
 #SUSE
@@ -65,6 +50,43 @@ Requires:       gstreamer-plugins-bad
 Requires:       gstreamer-plugins-libav
 %endif
 
+#Mageia, OpenMandriva, PCLinuxOS (Mandriva/Mandrake descendents)
+%if "%{_host_vendor}" == "mageia" || %{defined omvver} || "%{_host_vendor}" == "mandriva"
+%if "%{_host_vendor}" == "mandriva"
+# host_vendor = "mandriva" identifies PCLinuxOS.
+# As of 07/2023,  PCLinuxOS does not seem to supply openssl >= 3.0.
+# Note that UxPlay does not have a "GPL exception" allowing it to be
+# distributed in binary form when linked to openssl < 3.0, unless that
+# OpenSSL < 3.0 qualifies as a "system library".
+BuildRequires:  pkgconfig
+BuildRequires:  %{mklibname openssl-devel} >= 1.1.1
+Requires:       %{mklibname openssl1.1.0}
+%else
+BuildRequires:  pkgconf
+BuildRequires:  %{mklibname openssl-devel} >= 3.0
+%if %{defined omvver}
+Requires:       openssl >= 3.0
+%else
+Requires:       %{mklibname openssl3}
+%endif
+%endif
+BuildRequires:  %{mklibname plist-devel} >= 2.0
+BuildRequires:  %{mklibname avahi-compat-libdns_sd-devel}
+%if %{defined omvver}
+BuildRequires:  %{mklibname gstreamer-devel}
+BuildRequires:  %{mklibname gst-plugins-base1.0-devel}
+Requires:       %{mklibname plist} >= 2.0
+%else
+BuildRequires:  %{mklibname gstreamer1.0-devel}
+BuildRequires:  %{mklibname gstreamer-plugins-base1.0-devel}
+Requires:       %{mklibname plist2.0_3}
+%endif
+Requires:       gstreamer1.0-plugins-base
+Requires:       gstreamer1.0-plugins-good
+Requires:       gstreamer1.0-plugins-bad
+Requires:       gstreamer1.0-libav
+%endif
+
 %description
 An AirPlay2 Mirror and AirPlay2 Audio (but not Video) server that provides
 screen-mirroring (with audio) of iOS/MacOS clients in a display window on
@@ -74,18 +96,29 @@ server in non-mirror mode
 
 %prep
 
-%autosetup -n uxplay-%{version}
+%autosetup -n UxPlay-%{version}
 
 %cmake -DCMAKE_INSTALL_DOCDIR=%{_docdir}/%{name}
 
-%cmake_build
+%build
 
-%if "%{_host_vendor}" == "suse"
-#suse macro %%cmake_install installs from %%{buildsubdir} (misses docs in source directory  above it)
-cd ..   
+%if %{defined cmake_builddir}
+cd %{cmake_builddir}
+%else
+cd build
 %endif
 
-%cmake_install 
+%make_build
+
+%install
+
+%if %{defined cmake_builddir}
+cd %{cmake_builddir}
+%else
+cd build
+%endif
+
+%make_install
 
 %files
 %{_bindir}/uxplay
@@ -101,34 +134,7 @@ cd ..
 %{_docdir}/%{name}/llhttp/LICENSE-MIT
 
 %changelog
-* Sun Aug 27 2023 laolux <25555671+laolux@users.noreply.github.com> 1.65.3-2
-- fixed build, archive name has no capital letters
-  (25555671+laolux@users.noreply.github.com)
-
-* Wed Jul 26 2023 laolux <25555671+laolux@users.noreply.github.com> 1.65.3-1
-- move spec file (25555671+laolux@users.noreply.github.com)
-- improve uxplay.spec (fduncanh@gmail.com)
-- README edits (fduncanh@gmail.com)
-- improvements to uxplay.spec RPM spec file (fduncanh@gmail.com)
-- prepare 1.65.3 release (fduncanh@gmail.com)
-- allow uxplay to function w/o audio in avdec_aac is missing
-  (fduncanh@gmail.com)
-- uxplay 1.65.2: add advice to clear cache if plugin not found
-  (fduncanh@gmail.com)
-- add RPM spec file, document it in README; 1.65.1 release (fduncanh@gmail.com)
-- provide graceful exit if avdec_aac is absent (fduncanh@gmail.com)
-- fixes for various compiler warnings (fduncanh@gmail.com)
-- llhttp: minor update to v8.1.1 (fduncanh@gmail.com)
-- fix minor error in uxplay -h text (fduncanh@gmail.com)
-- README update about R Pi OS Legacy (Buster) (fduncanh@gmail.com)
-- cosmetic fixes to debug output (fduncanh@gmail.com)
-- replace a libplist-2.1.0 function, restore Debian 10 compatibility
-  (fduncanh@gmail.com)
-- README update (fduncanh@gmail.com)
-- WIN32 use default location if BONJOUR_SDK_HOME not set (fduncanh@gmail.com)
-- README updates (fduncanh@gmail.com)
-
-* Mon Jul 24 2023 UxPlay maintainer <https://github.com/FDH2/UxPlay>
+* Wed Sep 6 2023 UxPlay maintainer <https://github.com/FDH2/UxPlay>
   Initial uxplay.spec: tested on Fedora 38, Rocky Linux 9.2, OpenSUSE
-  Leap 15.5, Mageia 9.
+  Leap 15.5, Mageia 9, OpenMandriva ROME, PCLinuxOS
 - 

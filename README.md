@@ -1,4 +1,4 @@
-# UxPlay 1.65:  AirPlay-Mirror and AirPlay-Audio server for Linux, macOS, and Unix (now also runs on Windows).
+# UxPlay 1.66:  AirPlay-Mirror and AirPlay-Audio server for Linux, macOS, and Unix (now also runs on Windows).
 
 ### Now developed at the GitHub site [https://github.com/FDH2/UxPlay](https://github.com/FDH2/UxPlay) (where all user issues should be posted).
 
@@ -31,13 +31,15 @@
 available on Arch-based systems through AUR.
 
 * **NEW**: while no RPM-based distributions have yet packaged UxPlay, a RPM "specfile" **uxplay.spec** is now provided with recent
-[releases](https://github.com/FDH2/UxPlay/releases) (see their "Assets"), and can also be found in the UxPlay source top directory. To
-build a RPM package, install rpmdevtools, create a rpmbuild tree with "`rpmdev-setuptree`", and copy uxplay.spec into ``~/rpmbuild/SPECS``.
-In that directory, run "`rpmdev-spectool -g uxplay.spec`" to download the corresponding source file `uxplay-*.tar.gz`, which should then be 
-moved into ``~/rpmbuild/SOURCES``; then run "```rpmbuild -ba uxplay.spec```" (you will need to install
-any required dependencies this reports).  This should create an installable uxplay RPM package in a subdirectory of `~/rpmbuild/RPMS`.
-(**uxplay.spec** is tested on Fedora 38, Rocky Linux 9.2, OpenSUSE Leap 15.5, and Mageia 9; it can be easily modified to include dependency
-lists for other RPM-based distributions.)
+[releases](https://github.com/FDH2/UxPlay/releases) (see their "Assets"), and can also be found in the UxPlay source top directory.
+This can be used to build an installable RPM package. First-time RPM builders should first install the rpm-build and rpmdevtools packages,
+then create the rpmbuild tree with "`rpmdev-setuptree`".  Then download and
+copy uxplay.spec into ``~/rpmbuild/SPECS``.  In that directory, run "`rpmdev-spectool -g -R  uxplay.spec`" to download the corresponding
+source file `uxplay-*.tar.gz` into ``~/rpmbuild/SOURCES`` ("rpmdev-spectool" may also be just called "spectool"); then
+run "```rpmbuild -ba uxplay.spec```" (you will need to install
+any required dependencies this reports).  This should create the uxplay RPM package in a subdirectory of `~/rpmbuild/RPMS`.
+(**uxplay.spec** is tested on Fedora 38, Rocky Linux 9.2, openSUSE Leap 15.5, Mageia 9, OpenMandriva, PCLinuxOS;
+it can be easily modified to include dependency lists for other RPM-based distributions.)
 
 * On Linux and  \*BSD the mDNS/DNS-SD (Bonjour/ZeroConf) local network services needed by UxPlay are usually provided by Avahi: **if
 there is a firewall on the server that will host UxPlay, make sure the default network port for mDNS queries (UDP 5353) is open**. (Uxplay
@@ -57,7 +59,6 @@ that accesses the firmware decoder in the Broadcom GPU)_.
 * To (easily) compile the latest UxPlay from source, see the section [Getting UxPlay](#getting-uxplay).
 
 # Detailed description of UxPlay
-
 This project is a GPLv3 open source unix AirPlay2 Mirror server for Linux, macOS, and \*BSD.
 It was initially developed by
 [antimof](http://github.com/antimof/Uxplay) using code 
@@ -69,9 +70,9 @@ development, but periodically posts updates pulled from the new
 main [UxPlay site](https://github.com/FDH2/UxPlay)). 
 
 UxPlay is tested on a number of systems, including (among others) Debian (10 "Buster", 11 "Bullseye", 12 "Bookworm"),
-Ubuntu (20.04 LTS, 22.04 LTS, 23.04; also Ubuntu derivatives Linux Mint 20.3, Pop!\_OS 22.04 (NVIDIA edition)), Red Hat and clones (Fedora 38,
-Rocky Linux 9.2), Mageia 9, OpenMandriva "ROME", openSUSE 15.5, Arch Linux 23.05, macOS 13.3 (Intel and M2),
-FreeBSD 13.2, Windows 10 and 11 (64 bit).
+Ubuntu (20.04 LTS, 22.04 LTS, 23.04 (also Ubuntu derivatives Linux Mint, Pop!\_OS), Red Hat and clones (Fedora 38,
+Rocky Linux 9.2), openSUSE Leap 15.5, Mageia 9, OpenMandriva "ROME", PCLinuxOS, Arch Linux, Manjaro, and should run on any Linux system.
+Also tested on macOS 13.3 (Intel and M2), FreeBSD 13.2, Windows 10 and 11 (64 bit).
 
 On Raspberry Pi 4 model B, it is tested on Raspberry Pi OS (Bullseye) (32- and 64-bit), Ubuntu 22.04 LTS and 23.04, Manjaro RPi4 23.02,
 and (without hardware video decoding) on openSUSE 15.5. Also tested on Raspberry Pi 3 model B+.
@@ -85,7 +86,7 @@ Apple's AirPlay2 protocol using "Legacy Protocol", but some features are missing
 [here](https://github.com/SteeBono/airplayreceiver/wiki/AirPlay2-Protocol) and
 [here](https://emanuelecozzi.net/docs/airplay2); see also [pyatv](https://pyatv.dev/documentation/protocols) which could be
 a resource for adding modern protocols.)  While there is no guarantee that future
-iOS releases will keep supporting "Legacy Protocol", the recent iOS 16 release continues support.
+iOS releases will keep supporting "Legacy Protocol",  iOS 17 continues support.
 
 The UxPlay server and its client must be on the same local area network,
 on which a **Bonjour/Zeroconf mDNS/DNS-SD server**  is also running
@@ -190,7 +191,7 @@ You need a C/C++ compiler (e.g. g++) with the standard development libraries
 installed.  Debian-based systems provide a package "build-essential" for use
 in compiling software.   You also need pkg-config: if it is not found
 by "`which pkg-config`",  install pkg-config or its  work-alike replacement
-pkgconf.   Also make sure that cmake>=3.4.1 is installed:
+pkgconf.   Also make sure that cmake>=3.5 is installed:
 "`sudo apt-get install cmake`" (add ``build-essential`` and `pkg-config`
 (or ``pkgconf``)  to this if needed).
 
@@ -253,8 +254,7 @@ the GStreamer plugins must first be installed).
 
 ### Building on  non-Debian Linux and \*BSD
 **For those with RPM-based distributions, a RPM spec file uxplay.spec is also available for 
-building a rpm package with rpmbuild** (tested on Fedora 38, Rocky Linux 9.2 (RHEL clone), 
-OpenSUSE 15.5, and Mageia 9; see "Packaging Status" section)
+building a rpm package with rpmbuild**. See ["Packaging Status"](#packaging-status-linux-and-bsd-distributions) section above.
 
 
 * **Red Hat, or clones like CentOS (now continued as Rocky Linux or Alma Linux):** 
@@ -262,9 +262,10 @@ OpenSUSE 15.5, and Mageia 9; see "Packaging Status" section)
 gstreamer1-devel gstreamer1-plugins-base-devel (+libX11-devel for fullscreen X11) _(some of these 
 may be in the "CodeReady" add-on repository, called "PowerTools" by clones)_ 
 
-* **Mageia, OpenMandriva:**
+* **Mageia, PCLinuxOS, OpenMandriva:**
 Same as Red Hat, except for name changes: (Mageia) "gstreamer1.0-devel", "gstreamer-plugins-base1.0-devel";
-(OpenMandriva) "libopenssl-devel", "gstreamer-1.0-devel", "libgst-plugins-base1.0-devel".
+(OpenMandriva) "libopenssl-devel", "gstreamer-devel", "libgst-plugins-base1.0-devel".  PCLinuxOS: same as Mageia, 
+but uses synaptic (or apt) as its package manager.
 
  * **openSUSE:**
 (sudo zypper install) libopenssl-3-devel (formerly
@@ -309,30 +310,29 @@ In some cases, because of patent issues,
 the libav plugin feature **avdec_aac** needed for decoding AAC audio in mirror mode is not provided in the official distribution:
 get it from community repositories for those distributions.
 
-* **Red Hat, or clones like CentOS (now continued as Rocky Linux or Alma Linux):** 
-(sudo dnf install, or sudo yum install) gstreamer1-libav gstreamer1-plugins-bad-free (+ gstreamer1-vaapi
+* **Red Hat, or clones like CentOS (now continued as Rocky Linux or Alma Linux):**
+Install gstreamer1-libav gstreamer1-plugins-bad-free (+ gstreamer1-vaapi
 for Intel/AMD graphics).  In recent Fedora, gstreamer1-libav is renamed gstreamer1-plugin-libav.
-**To get avdec_aac, install packages from [rpmfusion.org](https://rpmfusion.org)**:  (get ffmpeg-libs from rpmfusion,
-on RHEL, but not recent Fedora, also get gstreamer1-libav from there).
+**To get avdec_aac, install packages from [rpmfusion.org](https://rpmfusion.org)**:  (get ffmpeg-libs from rpmfusion;
+on RHEL or clones, but not recent Fedora, also get gstreamer1-libav from there).
 
-* **Mageia, OpenMandriva:**
-(sudo dnf install, or sudo yum install) gstreamer1.0-libav gstreamer1.0-plugins-bad (+ gstreamer1.0-vaapi
+* **Mageia, PCLinuxOS, OpenMandriva:**
+Install gstreamer1.0-libav gstreamer1.0-plugins-bad (+ gstreamer1.0-vaapi
 for Intel/AMD graphics). **On Mageia, to get avdec_aac, install ffmpeg from the "tainted" repository**,
 (which also provides a more complete gstreamer1.0-plugins-bad).
 
- * **openSUSE:**
-(sudo zypper install)
-gstreamer-plugins-libav gstreamer-plugins-bad (+ gstreamer-plugins-vaapi
+* **openSUSE:**
+Install gstreamer-plugins-libav gstreamer-plugins-bad (+ gstreamer-plugins-vaapi
 for Intel/AMD graphics).  **To get avdec_aac, install libav\* packages for openSUSE
 from [Packman](https://ftp.gwdg.de/pub/linux/misc/packman/suse/) "Essentials"**; recommendation: after adding the
 Packman repository, use the option in YaST Software management to switch
 all system packages for multimedia to Packman).
 
 * **Arch Linux**
-(sudo pacman -Syu) gst-plugins-good gst-plugins-bad gst-libav (+ gstreamer-vaapi
+Install gst-plugins-good gst-plugins-bad gst-libav (+ gstreamer-vaapi
 for Intel/AMD graphics). 
 
- * **FreeBSD:** (sudo pkg install)  gstreamer1-libav, gstreamer1-plugins, gstreamer1-plugins-*
+ * **FreeBSD:** Install gstreamer1-libav, gstreamer1-plugins, gstreamer1-plugins-*
 (\* = core, good,  bad, x, gtk, gl, vulkan, pulse, v4l2,  ...), (+ gstreamer1-vaapi for Intel/AMD graphics).
 
 
@@ -359,12 +359,11 @@ are opened: **if a firewall is active, also open UDP port 5353 (for mDNS queries
 needed by Avahi**. See [Troubleshooting](#troubleshooting) below for
 help with this or other problems.
 
-* you may find video is improved by the setting -fps 60 that allows some video to be played at 60 frames
-per second. (You can see what framerate is actually streaming by using -vs fpsdisplaysink, and/or -FPSdata.)
-
 * By default, UxPlay is locked to
 its current client until that client drops the connection; since UxPlay-1.58, the option `-nohold` modifies this
-behavior so that when a new client requests a connection, it removes the current client and takes over.
+behavior so that when a new client requests a connection, it removes the current client and takes over.   UxPlay 1.66 introduces
+a mechanism ( `-restrict`, ``-allow <id>``, ```-block <id>```) to control which clients are allowed to connect, using their
+"deviceID" (which appears to be immutable).
 
 * In Mirror mode, GStreamer has a choice of **two** methods to play video with its accompanying audio: prior to UxPlay-1.64,
 the video and audio streams were both played as soon as possible after they arrived (the GStreamer "_sync=false_" method), with
@@ -485,8 +484,6 @@ patch from the UxPlay Wiki has been applied.)
   Sound and video will play on the remote host; "nohup" will keep uxplay running if the ssh session is
   closed.  Terminal output is saved to FILE (which can be /dev/null to discard it)
 
-
-
 ## Building UxPlay on macOS:  **(Intel X86_64 and "Apple Silicon" M1/M2 Macs)**
 
 _Note: A native AirPlay Server feature is included in  macOS 12 Monterey, but is restricted to recent hardware.
@@ -510,8 +507,6 @@ used in the macOS builds, so they can be uninstalled after building uxplay, if y
 Otherwise, build libplist and openssl from source: see instructions near the  end of this README;
 requires development tools (autoconf, automake, libtool, _etc._) to be installed.
 
-* You could instead compile the "official" GStreamer release from source: GStreamer-1.22.0 has been successfully
-built this way on a system using MacPorts: see [the UxPlay Wiki](https://github.com/FDH2/UxPlay/wiki/Building-GStreamer-from-Source-on-macOS-with-MacPorts)
 
 Next get the latest macOS release of GStreamer-1.0.
 
@@ -520,11 +515,13 @@ the GStreamer release for macOS
 from [https://gstreamer.freedesktop.org/download/](https://gstreamer.freedesktop.org/download/).
 (This release contains its own pkg-config,
 so you don't have to install one.) Install both the gstreamer-1.0 and gstreamer-1.0-devel packages.  After downloading, Shift-Click on them
-to install (they install to /Library/FrameWorks/GStreamer.framework).   Homebrew or MacPorts users should **not** install (or should uninstall) the GStreamer supplied by their package manager, if they use the "official" release.
+to install (they install to /Library/FrameWorks/GStreamer.framework).   Homebrew or MacPorts users should **not** install (or should uninstall)
+the GStreamer supplied by their package manager, if they use the "official" release.
 
-* **ADDED 2023-01-25: in the latest release (now 1.22.2) something in the GStreamer macOS binaries appears to not be
+* **ADDED 2023-01-25: in the current 1.22.x releases  something in the GStreamer macOS binaries appears to not be
 working (UxPlay starts receiving the AirPlay stream, but the video window does not open)**.  If
-you have this problem, use the GStreamer-1.20.6 binary packages until a fix is found.  _You could instead compile the "official" GStreamer-1.22.x release from source: GStreamer-1.22.0 has been successfully
+you have this problem, use the older GStreamer-1.20.7 binary packages until a fix is found.  _You could instead
+compile the "official" GStreamer-1.22.x release from source: GStreamer-1.22.0 has been successfully
 built this way on a system using MacPorts: see_ [the UxPlay Wiki](https://github.com/FDH2/UxPlay/wiki/Building-GStreamer-from-Source-on-macOS-with-MacPorts).
 
 **Using Homebrew's GStreamer**:  pkg-config is needed:  ("brew install pkg-config gstreamer").
@@ -575,12 +572,10 @@ seems fragile against attempts to change the X11 window size, or to rotations th
 
 * tested on Windows 10 and 11, 64-bit.
 
-1. Download and install  **Bonjour SDK for Windows v3.0** from the official Apple site
-   [https://developer.apple.com/download](https://developer.apple.com/download/all/?q=Bonjour%20SDK%20for%20Windows). (Apple
-   makes you register as a developer to access it; if you do not want to go through the registration process, you can download
-   the SDK without any registration at [softpedia.com](https://www.softpedia.com/get/Programming/SDK-DDK/Bonjour-SDK.shtml).)
-   This should install the Bonjour SDK as `C:\Program Files\Bonjour SDK`
-
+1. Download and install  **Bonjour SDK for Windows v3.0**.  You can download the SDK without any registration
+   at [softpedia.com](https://www.softpedia.com/get/Programming/SDK-DDK/Bonjour-SDK.shtml), or get it from the official Apple
+   site [https://developer.apple.com/download](https://developer.apple.com/download/all/?q=Bonjour%20SDK%20for%20Windows) (Apple makes
+   you register as a developer to access it from their site).  This should install the Bonjour SDK as `C:\Program Files\Bonjour SDK`.
 
 2. (This is for 64-bit Windows; a build for 32-bit Windows should be possible, but is not tested.) The
    unix-like MSYS2 build environment will be used: download and install MSYS2 from the official
@@ -670,6 +665,10 @@ the Windows Terminal, with `C:\msys64\mingw64\bin\uxplay`.
 
 Options:
 
+* These can also be written (one option per line, without the initial "`-`" character) in the UxPlay startup file (either given by
+environment variable `$UXPLAYRC`, or ``~/.uxplayrc`` or ```~/.config/uxplayrc```); lines begining
+with "`#`" are treated as comments, and ignored.  Command line options supersede  options in the startup file.
+
 **-n server_name** (Default: UxPlay);  server_name@_hostname_ will be the name that appears offering
    AirPlay services to your iPad, iPhone etc, where _hostname_ is the name of the server running uxplay. 
    This will also now be the name shown above the mirror display (X11)  window.
@@ -747,7 +746,7 @@ which will not work if a firewall is running.
    
 **-vs _videosink_** chooses the GStreamer videosink, instead of the default value
    "autovideosink" which chooses it for you.  Some videosink choices are:  ximagesink, xvimagesink,
-   vaapisink (for intel graphics), gtksink, glimagesink, waylandsink, osximagesink (for macOS),  kmssink (for
+   vaapisink (for intel graphics), gtksink, glimagesink, waylandsink, osxvideosink (for macOS),  kmssink (for
    systems without X11, like Raspberry Pi OS lite) or
    fpsdisplaysink (which shows the streaming framerate in fps).   Using quotes
    "..." allows some parameters to be included with the videosink name. 
@@ -789,8 +788,7 @@ which will not work if a firewall is running.
 
 **-al _x_** specifies an audio latency _x_ in (decimal) seconds in Audio-only (ALAC), that is reported to the client.  Values
    in the range [0.0, 10.0] seconds are allowed, and will be converted to a whole number of microseconds.  Default
-   is 0.25 sec (250000 usec).   (This replaces the `-ao` option introduced in v1.62, as a workaround for a problem that
-   is now fixed).
+   is 0.25 sec (250000 usec).   _(However, the client appears to ignore this reported latency, so this option seems non-functional.)_
 
 **-ca _filename_** provides a file (where _filename_ can include a full path) used for output of "cover art"
    (from Apple Music, _etc._,) in audio-only ALAC mode.   This file is overwritten with the latest cover art as
@@ -812,6 +810,21 @@ which will not work if a firewall is running.
 
 **-nohold**  Drops the current connection when a new client attempts to connect.  Without this option,
    the current client maintains exclusive ownership of UxPlay until it disconnects.
+
+**-restrict** Restrict clients allowed to connect to those specified by `-allow <deviceID>`.  The deviceID has the
+    form of a MAC address which is displayed by UxPlay when the client attempts to connect, and appears to be immutable.   It
+    has the format `XX:XX:XX:XX:XX:XX`, X = 0-9,A-F, and is possibly the "true" hardware
+    MAC address of the device.  Note that iOS clients generally expose different random "private Wi_Fi addresses" ("fake" MAC addresses) to 
+    different networks (for privacy reasons, to prevent tracking), which may change, and do not correpond to the deviceID.
+
+**-restrict no**  Remove restrictions (default).  This is useful as a command-line argument to overide restrictions set
+   in the Startup file.
+   
+**-allow _id_** Adds the deviceID = _id_ to the list of allowed clients when client restrictions
+   are being enforced.  Usually this will be an entry in the uxplayrc startup file.
+
+**-block _id_** Always block clients with deviceID = _id_, even when client restrictions are not
+   being enforced generally. Usually this will be an entry in the uxplayrc startup file.
 
 **-FPSdata** Turns on monitoring of regular reports about video streaming performance
    that are sent by the client.  These will be displayed in the terminal window if this
@@ -891,7 +904,6 @@ Some  systems  may instead use the mdnsd daemon as an alternative to provide DNS
 * **uxplay starts, but either stalls or stops after "Initialized server socket(s)" appears (_without the server name showing on the client_)**.
 
 If UxPlay stops with the "No DNS-SD Server found" message, this  means that your network **does not have a running Bonjour/zeroconf DNS-SD server.**
-
 Before v1.60, UxPlay used to stall silently if DNS-SD service registration failed, but now stops with an error message returned by the
 DNSServiceRegister function: kDNSServiceErr_Unknown if no DNS-SD server was found:
 other mDNS error codes are in the range FFFE FF00 (-65792) to FFFE FFFF (-65537), and are listed in the
@@ -899,15 +911,6 @@ dnssd.h file.  An older version of this (the one used by avahi) is found [here](
 A few additional error codes are defined in a later version
 from [Apple](https://opensource.apple.com/source/mDNSResponder/mDNSResponder-544/mDNSShared/dns_sd.h.auto.html).   
 
-On Linux, make sure Avahi is installed,
-and start the avahi-daemon service on the system running uxplay (your distribution will document how to do this, for example:
-`sudo systemctl [enable,disable,start,stop,status] avahi-daemon`).
-You might need to edit the avahi-daemon.conf file (it is typically in /etc/avahi/, find it with "`sudo find /etc -name avahi-daemon.conf`"):
-make sure that "disable-publishing" is **not** a selected option).
-Some  systems  may instead use the mdnsd daemon as an alternative to provide DNS-SD service.
-_(FreeBSD offers both alternatives, but only Avahi was tested: one of the steps needed for
-getting Avahi running on a FreeBSD system is to edit ```/usr/local/etc/avahi/avahi-daemon.conf```  to
-uncomment a line for airplay support._)
 
 If UxPlay stalls _without an error message_ and _without the server name showing on the client_, this is either pre-UxPlay-1.60
 behavior when no DNS-SD server was found, or a network problem.
@@ -975,7 +978,6 @@ been patched (see the UxPlay [Wiki](https://github.com/FDH2/UxPlay/wiki/Gstreame
 This is fixed in  GStreamer-1.22, and by backport patches from this in distributions such as Raspberry Pi OS (Bullseye): **use option `-bt709`
 with the GStreamer-1.18.4 from Raspberry Pi OS**.
 This also needs the bcm2835-codec kernel module that is not in the standard Linux kernel (it is available in Raspberry Pi OS, Ubuntu and Manjaro).
-**If you do not have this kernel module, or GStreamer < 1.22 is not patched, use options `-avdec -vsync` for software h264-decoding.**
 
 * **If this kernel module is not available in your Raspberry Pi operating system, or if GStreamer < 1.22 is not patched, use option `-avdec`
 for software h264-decoding.**
@@ -1100,9 +1102,14 @@ tvOS 12.2.1), so it does not seem to matter what UxPlay claims to be.
 
 
 # Changelog
-1.65.3 2023-07-23 Add RPM spec file; add graceful exit if required gstreamer libav feature "avdec_aac" is 
+1.66 2023-09-05   Fix IPV6 support.  Add option to restrict clients to those on a list of allowed deviceIDs,
+                  or to block connections from clients on a list of blocked deviceIDs.   Fix for #207 from
+		  @thiccaxe (screen lag in vsync mode after client wakes from sleep). 
+		  
+1.65.3 2023-07-23 Add RPM spec file; add warning if required gstreamer libav feature "avdec_aac" is 
                   missing: (this occurs in RPM-based distributions that ship an incomplete FFmpeg for Patent
                   or License reasons, and rely on users installing an externally-supplied complete FFmpeg).
+		  Mirror-mode airplay will now work without audio if avdec_aac is missing.
 
 1.65 2023-06-03   Eliminate pair_setup part of connection protocol to allow faster connections with clients
                   (thanks to @shuax #176 for this discovery); to revert, uncomment a line in lib/dnssdint.h.

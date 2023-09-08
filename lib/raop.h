@@ -53,6 +53,8 @@ struct raop_callbacks_s {
 
     void  (*audio_process)(void *cls, raop_ntp_t *ntp, audio_decode_struct *data);
     void  (*video_process)(void *cls, raop_ntp_t *ntp, h264_decode_struct *data);
+    void  (*video_pause)(void *cls);
+    void  (*video_resume)(void *cls);
 
     /* Optional but recommended callback functions */
     void  (*conn_init)(void *cls);
@@ -68,9 +70,10 @@ struct raop_callbacks_s {
     void  (*audio_set_progress)(void *cls, unsigned int start, unsigned int curr, unsigned int end);
     void  (*audio_get_format)(void *cls, unsigned char *ct, unsigned short *spf, bool *usingScreen, bool *isMedia, uint64_t *audioFormat);
     void  (*video_report_size)(void *cls, float *width_source, float *height_source, float *width, float *height);
+    void  (*report_client_request) (void *cls, char *deviceid, char *model, char *name, bool *admit);
 };
 typedef struct raop_callbacks_s raop_callbacks_t;
-raop_ntp_t *raop_ntp_init(logger_t *logger, raop_callbacks_t *callbacks, const unsigned char *remote_addr, int remote_addr_len,
+raop_ntp_t *raop_ntp_init(logger_t *logger, raop_callbacks_t *callbacks, const char *remote, int remote_addr_len,
                           unsigned short timing_rport, timing_protocol_t *time_protocol);
 
 RAOP_API raop_t *raop_init(int max_clients, raop_callbacks_t *callbacks);
